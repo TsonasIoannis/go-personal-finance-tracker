@@ -1,0 +1,28 @@
+
+services:
+  app:
+    build: .
+    container_name: personal-finance-tracker
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://user:password@db:5432/personal_finance_db?sslmode=disable
+
+  db:
+    image: postgres:17
+    container_name: personal-finance-db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: personal_finance_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
