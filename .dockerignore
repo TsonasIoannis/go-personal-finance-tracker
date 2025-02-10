@@ -20,6 +20,7 @@
 .devcontainer/
 .idea/
 *.swp
+.github/
 
 # Ignore Docker-related files
 docker-compose.yml
