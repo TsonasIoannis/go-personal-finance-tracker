@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+## [1.0.6](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.0.5...v1.0.6) (2025-02-11)
+
+
+### Bug Fixes
+
+* do not persist credentials ([faf725e](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/faf725e1b79e3ffe3e1ec8d8348f3f914d9d35fc))
+
 ## [1.0.5](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.0.4...v1.0.5) (2025-02-11)
 
 
