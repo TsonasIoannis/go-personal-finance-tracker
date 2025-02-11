@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+## [1.0.8](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.0.7...v1.0.8) (2025-02-11)
+
+
+### Bug Fixes
+
+* test commit filter ([5bdec4b](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/5bdec4be66b18547f0c739594d0bba0598f5b747))
+
 ## [1.0.7](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.0.6...v1.0.7) (2025-02-11)
 
 
