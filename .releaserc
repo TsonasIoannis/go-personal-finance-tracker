@@ -39,7 +39,7 @@
         "assets": [
           "CHANGELOG.md"
         ],
-        "message": "chore(release): ${nextRelease.version} [skip actions]"
+        "message": "chore(release): ${nextRelease.version}"
       }
     ],
     [
