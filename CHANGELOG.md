@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+## [1.0.7](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.0.6...v1.0.7) (2025-02-11)
+
+
+### Bug Fixes
+
+* run only docker release on new tag ([d32cfdf](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/d32cfdf6290074aecbe1568ef0d1ff61318eb7ca))
+
 ## [1.0.6](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.0.5...v1.0.6) (2025-02-11)
 
 
