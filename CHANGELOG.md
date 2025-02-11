@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+## [1.0.5](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.0.4...v1.0.5) (2025-02-11)
+
+
+### Bug Fixes
+
+* use custom PAT ([7ee387f](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/7ee387ff96d25dfe81cdd50a2f48a1ba801c3883))
+
 ## [1.0.4](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.0.3...v1.0.4) (2025-02-11)
 
 
