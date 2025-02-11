@@ -5,7 +5,7 @@ on:
     branches:
       - main
 permissions:
-  contents: read # for checkout
+  contents: write # for checkout
 
 jobs:
   release:
