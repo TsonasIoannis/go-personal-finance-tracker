@@ -22,7 +22,10 @@ jobs:
       run: go mod tidy
 
     - name: Build
-      run: go build -o personal-finance-tracker cmd/main.go
+      run: |
+        GOOS=linux GOARCH=amd64 go build -o dist/personal-finance-tracker-linux cmd/main.go
+        GOOS=darwin GOARCH=amd64 go build -o dist/personal-finance-tracker-mac cmd/main.go
+        GOOS=windows GOARCH=amd64 go build -o dist/personal-finance-tracker.exe cmd/main.go
 
     - name: Test
-      run: go test -v
+      run: go test -v ./...
