@@ -12,9 +12,8 @@ RUN go mod tidy
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o personal-finance-tracker cmd/main.go
-
-RUN chown serveruser:serveruser /app/server
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o personal-finance-tracker cmd/main.go \
+    && chown serveruser:serveruser /app/server
 
 # Stage 2: Run
 FROM scratch
@@ -22,8 +21,8 @@ FROM scratch
 WORKDIR /home/appuser
 
 # Copy built binary from builder stage
-COPY --from=build /etc/passwd /etc/passwd
-COPY --from=build /app/server .
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /app/server .
 
 # Set environment variables (optional)
 ENV PORT=8080
