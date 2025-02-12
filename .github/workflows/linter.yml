@@ -5,26 +5,32 @@ on:
     branches:
       - main
     tags-ignore:
-      - '*'
+      - "*"
   pull_request:
     branches:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+  statuses: write
+
 jobs:
-  if: "!contains(github.event.head_commit.message, 'chore(release)')"
   lint:
+    if: "!contains(github.event.head_commit.message, 'chore(release)')"
     name: Run Super Linter
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: "1.23"
 
       - name: Build
         run: go mod tidy
@@ -35,3 +41,4 @@ jobs:
           VALIDATE_ALL_CODEBASE: true
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILTER_REGEX_EXCLUDE: CHANGELOG.md

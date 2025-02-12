@@ -1,9 +1,11 @@
 # Personal Finance Tracker
 
 ## Description
+
 A simple personal finance tracker API built with Golang and PostgreSQL. This project allows users to track their income, expenses, and budgets in a structured manner. It provides authentication, basic financial reports, and a RESTful API for managing transactions.
 
 ## Tech Stack
+
 - **Language**: Golang
 - **Framework**: Gin (for API handling)
 - **Database**: PostgreSQL
@@ -12,6 +14,7 @@ A simple personal finance tracker API built with Golang and PostgreSQL. This pro
 - **Deployment**: Docker
 
 ## Features
+
 - User authentication (JWT-based)
 - CRUD operations for transactions (income & expenses)
 - Monthly budget tracking
@@ -19,7 +22,8 @@ A simple personal finance tracker API built with Golang and PostgreSQL. This pro
 - Docker support for easy deployment
 
 ## Project Structure
-```
+
+```bash
 personal-finance-tracker/
 │── cmd/                     # Entry point for the app
 │   ├── main.go               # Initializes and runs the app
@@ -64,12 +68,15 @@ personal-finance-tracker/
 ```
 
 ## Installation
+
 ### Prerequisites
+
 - Golang installed
 - Docker & Docker Compose
 - PostgreSQL database (or use Docker setup)
 
 ### Setup
+
 ```sh
 git clone https://github.com/TsonasIoannis/go-personal-finance-tracker.git
 cd go-personal-finance-tracker
@@ -77,6 +84,7 @@ cp .env.example .env  # Configure environment variables
 ```
 
 ### Running Locally
+
 ```sh
 docker-compose up -d  # Starts PostgreSQL
 
@@ -85,14 +93,15 @@ go run cmd/main.go
 ```
 
 ## API Endpoints
-| Method | Endpoint                 | Description                  |
-|--------|--------------------------|------------------------------|
-| POST   | `/register`               | Register a new user          |
-| POST   | `/login`                  | Authenticate user & get JWT  |
-| GET    | `/transactions`           | Get all transactions         |
-| POST   | `/transactions`           | Add a new transaction        |
-| DELETE | `/transactions/:id`       | Delete a transaction         |
+
+| Method | Endpoint            | Description                 |
+| ------ | ------------------- | --------------------------- |
+| POST   | `/register`         | Register a new user         |
+| POST   | `/login`            | Authenticate user & get JWT |
+| GET    | `/transactions`     | Get all transactions        |
+| POST   | `/transactions`     | Add a new transaction       |
+| DELETE | `/transactions/:id` | Delete a transaction        |
 
 ## License
-This project is licensed under the MIT License.
 
+This project is licensed under the MIT License.
