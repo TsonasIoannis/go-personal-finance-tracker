@@ -23,7 +23,7 @@ A simple personal finance tracker API built with Golang and PostgreSQL. This pro
 
 ## Project Structure
 
-```
+```bash
 personal-finance-tracker/
 │── cmd/                     # Entry point for the app
 │   ├── main.go               # Initializes and runs the app
