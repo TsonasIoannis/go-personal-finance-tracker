@@ -9,15 +9,19 @@ import (
 )
 
 func main() {
-	// Initialize the database connection
-	if err := database.InitDB(); err != nil {
+	// Initialize a new PostgresDatabase instance
+	db := database.NewPostgresDatabase()
+
+	// Connect to the database
+	if err := db.Connect(); err != nil {
 		log.Fatalf("Database initialization failed: %v", err)
 	}
 
-	defer database.CloseDB()
+	// Ensure database is closed when the program exits
+	defer db.Close()
 
 	// Check database connection health
-	if err := database.CheckDBConnection(); err != nil {
+	if err := db.CheckConnection(); err != nil {
 		log.Println("Database is unavailable:", err)
 	} else {
 		log.Println("Database is healthy!")
@@ -28,7 +32,7 @@ func main() {
 
 	// Register health & readiness routes
 	r.GET("/health", handlers.HealthCheckHandler)
-	r.GET("/ready", handlers.ReadinessCheckHandler)
+	r.GET("/ready", handlers.ReadinessCheckHandler(db))
 
 	// Default route
 	r.GET("/", func(c *gin.Context) {
