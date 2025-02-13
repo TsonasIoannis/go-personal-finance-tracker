@@ -32,5 +32,9 @@ EXPOSE 8080
 
 USER serveruser
 
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["./personal-finance-tracker", "health"]
+
 # Run the application
 CMD ["./personal-finance-tracker"]
