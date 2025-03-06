@@ -31,11 +31,18 @@ func TestConnect(t *testing.T) {
 	t.Run("should fail if sql.Open fails", func(t *testing.T) {
 		os.Setenv("DATABASE_URL", "invalid-url")
 
+		// Mock sql.Open to always return an error (simulating failure)
+		mockOpen := func(driverName, dataSourceName string) (*sql.DB, error) {
+			return nil, errors.New("mock sql.Open failure")
+		}
+
 		// Attempt to connect to an invalid database
 		pgDB := NewPostgresDatabase()
-		err := pgDB.Connect(sql.Open)
+		err := pgDB.Connect(mockOpen)
+
+		// Ensure the error is exactly from "failed to open DB connection"
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to open DB connection")
+		assert.Contains(t, err.Error(), "failed to open DB connection: mock sql.Open failure")
 	})
 	t.Run("should fail if db.Ping fails in Connect", func(t *testing.T) {
 		os.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/dbname")

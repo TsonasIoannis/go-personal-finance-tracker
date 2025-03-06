@@ -58,7 +58,10 @@ func TestReadinessCheckHandler(t *testing.T) {
 		router := gin.New()
 		router.GET("/readiness", ReadinessCheckHandler(mockDB))
 
-		req, _ := http.NewRequest(http.MethodGet, "/readiness", nil)
+		// Explicitly check for error
+		req, err := http.NewRequest(http.MethodGet, "/readiness", nil)
+		assert.NoError(t, err)
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -75,7 +78,10 @@ func TestReadinessCheckHandler(t *testing.T) {
 		router := gin.New()
 		router.GET("/readiness", ReadinessCheckHandler(mockDB))
 
-		req, _ := http.NewRequest(http.MethodGet, "/readiness", nil)
+		// Explicitly check for error
+		req, err := http.NewRequest(http.MethodGet, "/readiness", nil)
+		assert.NoError(t, err)
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 

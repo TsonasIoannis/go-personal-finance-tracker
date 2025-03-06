@@ -16,7 +16,10 @@ func TestHealthCheckHandler(t *testing.T) {
 		router := gin.New()
 		router.GET("/health", HealthCheckHandler)
 
-		req, _ := http.NewRequest(http.MethodGet, "/health", nil)
+		// Explicitly check for error
+		req, err := http.NewRequest(http.MethodGet, "/health", nil)
+		assert.NoError(t, err)
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
