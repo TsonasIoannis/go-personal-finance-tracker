@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	_ "github.com/lib/pq" // ✅ Import the PostgreSQL driver (underscore means it's used for side effects)
 )
 
 // PostgresDatabase implements the Database interface
@@ -18,19 +20,18 @@ func NewPostgresDatabase() *PostgresDatabase {
 }
 
 // Connect initializes the database connection
-func (p *PostgresDatabase) Connect() error {
+func (p *PostgresDatabase) Connect(openDB func(driverName, dataSourceName string) (*sql.DB, error)) error {
 	connStr := os.Getenv("DATABASE_URL")
 	if connStr == "" {
 		return fmt.Errorf("DATABASE_URL environment variable is not set")
 	}
 
 	var err error
-	p.db, err = sql.Open("postgres", connStr)
+	p.db, err = openDB("postgres", connStr)
 	if err != nil {
 		return fmt.Errorf("failed to open DB connection: %v", err)
 	}
 
-	// Verify the connection is alive
 	if err = p.db.Ping(); err != nil {
 		return fmt.Errorf("failed to ping DB: %v", err)
 	}
