@@ -32,7 +32,7 @@ func TestConnect(t *testing.T) {
 		os.Setenv("DATABASE_URL", "invalid-url")
 
 		// Mock sql.Open to always return an error (simulating failure)
-		mockOpen := func(driverName, dataSourceName string) (*sql.DB, error) {
+		mockOpen := func(_, dataSourceName string) (*sql.DB, error) {
 			return nil, errors.New("mock sql.Open failure")
 		}
 
@@ -56,7 +56,7 @@ func TestConnect(t *testing.T) {
 		mock.ExpectPing().WillReturnError(errors.New("failed to ping DB"))
 
 		// Mock sql.Open to return mockDB
-		mockOpen := func(driverName, dataSourceName string) (*sql.DB, error) {
+		mockOpen := func(_, dataSourceName string) (*sql.DB, error) {
 			return mockDB, nil
 		}
 
@@ -83,7 +83,7 @@ func TestConnect(t *testing.T) {
 		mock.ExpectPing().WillReturnError(nil)
 
 		// Mock sql.Open to return mockDB
-		mockOpen := func(driverName, dataSourceName string) (*sql.DB, error) {
+		mockOpen := func(_, dataSourceName string) (*sql.DB, error) {
 			return mockDB, nil
 		}
 
