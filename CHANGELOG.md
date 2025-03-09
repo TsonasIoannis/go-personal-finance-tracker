@@ -1,5 +1,18 @@
 # Semantic Versioning Changelog
 
+# [1.1.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.0.8...v1.1.0) (2025-03-09)
+
+
+### Bug Fixes
+
+* binary name ([400aab5](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/400aab553f81a672441166ea9d7ed25e44235baf))
+* implement dal ([cc48fc8](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/cc48fc85ca767d8419dda94c2a2eb9011716fb82))
+
+
+### Features
+
+* add healthcheck ([354f16b](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/354f16b132604c551a42791e5faaa536f9776fbb))
+
 ## [1.0.8](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.0.7...v1.0.8) (2025-02-11)
 
 
