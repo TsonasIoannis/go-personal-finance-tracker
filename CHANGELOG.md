@@ -1,5 +1,16 @@
 # Semantic Versioning Changelog
 
+# [1.3.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.2.0...v1.3.0) (2025-03-10)
+
+
+### Features
+
+* add budget service ([9098da9](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/9098da9b9902a94796f401aaba9b93c93f1ef3dc))
+* add category service ([3c72fb5](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/3c72fb58b33c697edbdcc93229bf075ef5eba72e))
+* add payment method service ([6bc79e8](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/6bc79e83bf563dcd1cfa041ff85e0f7f94fb4f38))
+* add transaction service ([a64dcad](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/a64dcadd18d1947b5582424eca140522792f5557))
+* add user service ([deb1bb3](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/deb1bb30b25621d099a23758edade3707f772203))
+
 # [1.2.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.1.1...v1.2.0) (2025-03-10)
 
 
