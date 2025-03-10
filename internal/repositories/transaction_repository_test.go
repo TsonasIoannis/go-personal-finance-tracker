@@ -93,7 +93,8 @@ func TestTransactionRepository(t *testing.T) {
 			Date:       time.Now(),
 			Note:       "Old transaction",
 		}
-		repo.CreateTransaction(transaction)
+		err1 := repo.CreateTransaction(transaction)
+		assert.NoError(t, err1)
 
 		transaction.Amount = 600.00 // Update amount
 		transaction.Note = "Updated transaction"

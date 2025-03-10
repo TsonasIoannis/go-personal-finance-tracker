@@ -51,7 +51,8 @@ func TestGetCategoryByID(t *testing.T) {
 
 	t.Run("Retrieve existing category", func(t *testing.T) {
 		category := &models.Category{Name: "Utilities", Description: "Electricity, water, gas"}
-		repo.CreateCategory(category)
+		err := repo.CreateCategory(category)
+		assert.NoError(t, err)
 
 		foundCategory, err := repo.GetCategoryByID(category.ID)
 		assert.NoError(t, err)

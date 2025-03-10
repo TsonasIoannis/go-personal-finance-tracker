@@ -163,7 +163,8 @@ func TestUpdateBudget(t *testing.T) {
 			StartDate:  time.Now(),
 			EndDate:    time.Now().AddDate(0, 1, 0),
 		}
-		repo.CreateBudget(budget)
+		err1 := repo.CreateBudget(budget)
+		assert.NoError(t, err1)
 
 		// Update the budget
 		budget.Limit = 750.00
