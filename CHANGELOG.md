@@ -1,5 +1,18 @@
 # Semantic Versioning Changelog
 
+# [1.2.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.1.1...v1.2.0) (2025-03-10)
+
+
+### Features
+
+* add budget repository ([54a0531](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/54a0531e36e36d200a0ab062348751d8d5b3bf9f))
+* add category repository ([6c32cfd](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/6c32cfd6ee153df24845642bfce55a16a32d4dbb))
+* add gorm ([e0b946d](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/e0b946d09b3ac94f5e3677623e39bb7e40296f2e))
+* add initial models ([54e9c8d](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/54e9c8d00bf13815b7e2165f394f361f2a05bfdd))
+* add payment method repository ([56bec0d](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/56bec0d75eccf2c0132ad9b84bd5ed8691fad5b8))
+* add transaction repository ([5488c97](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/5488c97fceb82577ecdde6eb1a3aeb9ef0e80f16))
+* add user repository ([b67bfd7](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/b67bfd7c62cc8be879cf9fd061e955bb37174f2c))
+
 ## [1.1.1](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.1.0...v1.1.1) (2025-03-09)
 
 
