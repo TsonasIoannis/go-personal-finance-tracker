@@ -1,14 +1,19 @@
 package database
 
 import (
-	"database/sql"
-	"errors"
 	"os"
 	"testing"
 
-	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
+
+// MockGormDB creates an in-memory SQLite instance for testing
+func MockGormDB() (*gorm.DB, error) {
+	return gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+}
 
 func TestNewPostgresDatabase(t *testing.T) {
 	t.Run("should initialize a new instance with nil db", func(t *testing.T) {
@@ -23,79 +28,18 @@ func TestConnect(t *testing.T) {
 		os.Unsetenv("DATABASE_URL")
 
 		pgDB := NewPostgresDatabase()
-		err := pgDB.Connect(sql.Open)
+		err := pgDB.Connect()
 		assert.Error(t, err)
 		assert.Equal(t, "DATABASE_URL environment variable is not set", err.Error())
 	})
 
-	t.Run("should fail if sql.Open fails", func(t *testing.T) {
-		os.Setenv("DATABASE_URL", "invalid-url")
+	t.Run("should fail with an invalid DSN", func(t *testing.T) {
+		os.Setenv("DATABASE_URL", "invalid-dsn") // This will trigger a connection failure
 
-		// Mock sql.Open to always return an error (simulating failure)
-		mockOpen := func(_, _ string) (*sql.DB, error) {
-			return nil, errors.New("mock sql.Open failure")
-		}
-
-		// Attempt to connect to an invalid database
 		pgDB := NewPostgresDatabase()
-		err := pgDB.Connect(mockOpen)
-
-		// Ensure the error is exactly from "failed to open DB connection"
+		err := pgDB.Connect()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to open DB connection: mock sql.Open failure")
-	})
-	t.Run("should fail if db.Ping fails in Connect", func(t *testing.T) {
-		os.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/dbname")
-
-		// Enable ping monitoring for sqlmock
-		mockDB, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true))
-		assert.NoError(t, err)
-		defer mockDB.Close()
-
-		// Expect db.Ping() to return an error
-		mock.ExpectPing().WillReturnError(errors.New("failed to ping DB"))
-
-		// Mock sql.Open to return mockDB
-		mockOpen := func(_, _ string) (*sql.DB, error) {
-			return mockDB, nil
-		}
-
-		// Create PostgresDatabase instance
-		pgDB := NewPostgresDatabase()
-
-		// Call Connect() with mock sql.Open()
-		err = pgDB.Connect(mockOpen)
-		assert.Error(t, err)
-		assert.Equal(t, "failed to ping DB: failed to ping DB", err.Error())
-
-		// Ensure expectations were met
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-	t.Run("should succeed when connection is established", func(t *testing.T) {
-		os.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/dbname")
-
-		// Enable ping monitoring for sqlmock
-		mockDB, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true))
-		assert.NoError(t, err)
-		defer mockDB.Close()
-
-		// Expect db.Ping() to return nil (successful ping)
-		mock.ExpectPing().WillReturnError(nil)
-
-		// Mock sql.Open to return mockDB
-		mockOpen := func(_, _ string) (*sql.DB, error) {
-			return mockDB, nil
-		}
-
-		// Create PostgresDatabase instance
-		pgDB := NewPostgresDatabase()
-
-		// Call Connect() with mock sql.Open()
-		err = pgDB.Connect(mockOpen)
-		assert.NoError(t, err) // ✅ This ensures the success case runs
-
-		// Ensure expectations were met
-		assert.NoError(t, mock.ExpectationsWereMet())
+		assert.Contains(t, err.Error(), "failed to connect to DB")
 	})
 }
 
@@ -107,43 +51,35 @@ func TestCheckConnection(t *testing.T) {
 		assert.Equal(t, "database connection is not initialized", err.Error())
 	})
 
-	t.Run("should fail if db.Ping fails", func(t *testing.T) {
-		mockDB, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true)) // Enable ping monitoring
+	t.Run("should succeed if db is available", func(t *testing.T) {
+		mockDB, err := MockGormDB()
 		assert.NoError(t, err)
-		defer mockDB.Close()
-
-		mock.ExpectPing().WillReturnError(errors.New("database is unreachable"))
 
 		pgDB := &PostgresDatabase{db: mockDB}
 
 		err = pgDB.CheckConnection()
-		assert.Error(t, err)
-		assert.Equal(t, "database is unreachable: database is unreachable", err.Error())
-
-		assert.NoError(t, mock.ExpectationsWereMet())
+		assert.NoError(t, err) // DB is reachable
 	})
+	t.Run("should fail if Ping() returns an error", func(t *testing.T) {
+		// Create an invalid mock DB
+		brokenDB, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 
-	t.Run("should succeed if db.Ping succeeds", func(t *testing.T) {
-		mockDB, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true)) // Enable ping monitoring
-		assert.NoError(t, err)
-		defer mockDB.Close()
+		// Close DB to make Ping() fail
+		sqlDB, _ := brokenDB.DB()
+		sqlDB.Close() // Now Ping() will fail
 
-		mock.ExpectPing().WillReturnError(nil)
+		pgDB := &PostgresDatabase{db: brokenDB}
 
-		pgDB := &PostgresDatabase{db: mockDB}
-
-		err = pgDB.CheckConnection()
-		assert.NoError(t, err)
-
-		assert.NoError(t, mock.ExpectationsWereMet())
+		err := pgDB.CheckConnection()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "database is unreachable") // Correct failure message
 	})
 }
 
 func TestGetDB(t *testing.T) {
 	t.Run("should return the correct DB instance", func(t *testing.T) {
-		mockDB, _, err := sqlmock.New()
+		mockDB, err := MockGormDB()
 		assert.NoError(t, err)
-		defer mockDB.Close()
 
 		pgDB := &PostgresDatabase{db: mockDB}
 		assert.Equal(t, mockDB, pgDB.GetDB())
@@ -151,35 +87,14 @@ func TestGetDB(t *testing.T) {
 }
 
 func TestClose(t *testing.T) {
-	t.Run("should fail if db.Close fails", func(t *testing.T) {
-		mockDB, mock, err := sqlmock.New()
-		assert.NoError(t, err)
-		defer mockDB.Close()
-
-		mock.ExpectClose().WillReturnError(errors.New("failed to close connection"))
-
-		pgDB := &PostgresDatabase{db: mockDB}
-
-		err = pgDB.Close()
-		assert.Error(t, err)
-		assert.Equal(t, "failed to close connection", err.Error())
-
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-
 	t.Run("should succeed if db.Close succeeds", func(t *testing.T) {
-		mockDB, mock, err := sqlmock.New()
+		mockDB, err := MockGormDB()
 		assert.NoError(t, err)
-		defer mockDB.Close()
-
-		mock.ExpectClose().WillReturnError(nil)
 
 		pgDB := &PostgresDatabase{db: mockDB}
 
 		err = pgDB.Close()
-		assert.NoError(t, err)
-
-		assert.NoError(t, mock.ExpectationsWereMet())
+		assert.NoError(t, err) // ✅ Closing should work
 	})
 
 	t.Run("should return nil if db is nil", func(t *testing.T) {
@@ -187,5 +102,25 @@ func TestClose(t *testing.T) {
 
 		err := pgDB.Close()
 		assert.NoError(t, err)
+	})
+}
+
+func TestRunMigrations(t *testing.T) {
+	t.Run("should successfully apply migrations", func(t *testing.T) {
+		// Create an in-memory SQLite database for testing
+		mockDB, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+		assert.NoError(t, err)
+
+		pgDB := &PostgresDatabase{db: mockDB}
+
+		// Call runMigrations()
+		err = pgDB.runMigrations()
+		assert.NoError(t, err)
+
+		// Verify that tables were created
+		assert.True(t, pgDB.db.Migrator().HasTable(&models.User{}), "User table should exist")
+		assert.True(t, pgDB.db.Migrator().HasTable(&models.Transaction{}), "Transaction table should exist")
+		assert.True(t, pgDB.db.Migrator().HasTable(&models.Category{}), "Category table should exist")
+		assert.True(t, pgDB.db.Migrator().HasTable(&models.Budget{}), "Budget table should exist")
 	})
 }

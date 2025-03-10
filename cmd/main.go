@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
@@ -14,7 +13,7 @@ func main() {
 	db := database.NewPostgresDatabase()
 
 	// Connect to the database
-	if err := db.Connect(sql.Open); err != nil {
+	if err := db.Connect(); err != nil {
 		log.Fatalf("Database initialization failed: %v", err)
 	}
 

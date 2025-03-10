@@ -1,11 +1,11 @@
 package database
 
-import "database/sql"
+import "gorm.io/gorm"
 
 // Database defines an interface for database operations
 type Database interface {
-	Connect(openDB func(driverName, dataSourceName string) (*sql.DB, error)) error
-	CheckConnection() error
-	GetDB() *sql.DB
+	Connect() error
+	GetDB() *gorm.DB
 	Close() error
+	CheckConnection() error
 }
