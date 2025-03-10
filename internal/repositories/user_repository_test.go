@@ -11,7 +11,7 @@ import (
 
 func setupTestDB() *gorm.DB {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	db.AutoMigrate(&models.User{})
+	_ = db.AutoMigrate(&models.User{})
 	return db
 }
 
@@ -33,7 +33,8 @@ func TestUserRepository(t *testing.T) {
 
 	t.Run("should retrieve a user by email", func(t *testing.T) {
 		user := &models.User{Name: "Jane Doe", Email: "jane@example.com", Password: "hashedpassword"}
-		repo.CreateUser(user)
+		err := repo.CreateUser(user)
+		assert.NoError(t, err)
 
 		foundUser, err := repo.GetUserByEmail("jane@example.com")
 		assert.NoError(t, err)
@@ -43,7 +44,8 @@ func TestUserRepository(t *testing.T) {
 
 	t.Run("should delete a user", func(t *testing.T) {
 		user := &models.User{Name: "Mark Smith", Email: "mark@example.com", Password: "hashedpassword"}
-		repo.CreateUser(user)
+		err1 := repo.CreateUser(user)
+		assert.NoError(t, err1)
 
 		err := repo.DeleteUser(user.ID)
 		assert.NoError(t, err)

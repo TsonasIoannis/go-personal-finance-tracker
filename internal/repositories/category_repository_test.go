@@ -12,7 +12,7 @@ import (
 // setupTestDB initializes an in-memory SQLite database for testing.
 func setupCategoryTestDB() *gorm.DB {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	db.AutoMigrate(&models.Category{})
+	_ = db.AutoMigrate(&models.Category{})
 	return db
 }
 
@@ -75,8 +75,10 @@ func TestGetAllCategories(t *testing.T) {
 	t.Run("Retrieve multiple categories", func(t *testing.T) {
 		category1 := &models.Category{Name: "Education", Description: "School and learning"}
 		category2 := &models.Category{Name: "Entertainment", Description: "Movies, concerts"}
-		repo.CreateCategory(category1)
-		repo.CreateCategory(category2)
+		err1 := repo.CreateCategory(category1)
+		assert.NoError(t, err1)
+		err2 := repo.CreateCategory(category2)
+		assert.NoError(t, err2)
 
 		categories, err := repo.GetAllCategories()
 		assert.NoError(t, err)
@@ -99,7 +101,8 @@ func TestDeleteCategory(t *testing.T) {
 
 	t.Run("Delete existing category", func(t *testing.T) {
 		category := &models.Category{Name: "Gaming", Description: "Video games"}
-		repo.CreateCategory(category)
+		err1 := repo.CreateCategory(category)
+		assert.NoError(t, err1)
 
 		err := repo.DeleteCategory(category.ID)
 		assert.NoError(t, err)
@@ -124,7 +127,8 @@ func TestUpdateCategory(t *testing.T) {
 	t.Run("Update existing category", func(t *testing.T) {
 		// Create a category
 		category := &models.Category{Name: "Transport", Description: "Car, public transport"}
-		repo.CreateCategory(category)
+		err1 := repo.CreateCategory(category)
+		assert.NoError(t, err1)
 
 		// Update the category
 		category.Name = "Travel"

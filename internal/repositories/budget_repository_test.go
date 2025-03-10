@@ -13,7 +13,7 @@ import (
 // setupTestDB initializes an in-memory SQLite database for testing.
 func setupBudgetTestDB() *gorm.DB {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	db.AutoMigrate(
+	_ = db.AutoMigrate(
 		&models.Budget{},
 		&models.User{},
 		&models.Transaction{},
@@ -58,7 +58,8 @@ func TestGetBudgetByID(t *testing.T) {
 			StartDate:  time.Now(),
 			EndDate:    time.Now().AddDate(0, 1, 0),
 		}
-		repo.CreateBudget(budget)
+		err := repo.CreateBudget(budget)
+		assert.NoError(t, err)
 
 		foundBudget, err := repo.GetBudgetByID(budget.ID)
 		assert.NoError(t, err)
@@ -99,8 +100,10 @@ func TestGetBudgetsByUserID(t *testing.T) {
 			StartDate:  time.Now(),
 			EndDate:    time.Now().AddDate(0, 1, 0),
 		}
-		repo.CreateBudget(budget1)
-		repo.CreateBudget(budget2)
+		err1 := repo.CreateBudget(budget1)
+		assert.NoError(t, err1)
+		err2 := repo.CreateBudget(budget2)
+		assert.NoError(t, err2)
 
 		budgets, err := repo.GetBudgetsByUserID(1)
 		assert.NoError(t, err)
@@ -127,7 +130,8 @@ func TestDeleteBudget(t *testing.T) {
 			StartDate:  time.Now(),
 			EndDate:    time.Now().AddDate(0, 1, 0),
 		}
-		repo.CreateBudget(budget)
+		err1 := repo.CreateBudget(budget)
+		assert.NoError(t, err1)
 
 		err := repo.DeleteBudget(budget.ID)
 		assert.NoError(t, err)

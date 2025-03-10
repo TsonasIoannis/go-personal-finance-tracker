@@ -13,7 +13,7 @@ import (
 // setupTransactionTestDB initializes an in-memory SQLite database for testing.
 func setupTransactionTestDB() *gorm.DB {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	db.AutoMigrate(&models.User{}, &models.Transaction{})
+	_ = db.AutoMigrate(&models.User{}, &models.Transaction{})
 	return db
 }
 
@@ -54,7 +54,8 @@ func TestTransactionRepository(t *testing.T) {
 			Date:       time.Now(),
 			Note:       "Salary payment",
 		}
-		repo.CreateTransaction(transaction)
+		err := repo.CreateTransaction(transaction)
+		assert.NoError(t, err)
 
 		foundTransaction, err := repo.GetTransactionByID(transaction.ID)
 		assert.NoError(t, err)
@@ -73,8 +74,10 @@ func TestTransactionRepository(t *testing.T) {
 		// Reset transactions before running test
 		db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.Transaction{})
 
-		repo.CreateTransaction(&models.Transaction{UserID: user.ID, Type: "expense", Amount: 50, CategoryID: 1, Date: time.Now()})
-		repo.CreateTransaction(&models.Transaction{UserID: user.ID, Type: "income", Amount: 150, CategoryID: 2, Date: time.Now()})
+		err1 := repo.CreateTransaction(&models.Transaction{UserID: user.ID, Type: "expense", Amount: 50, CategoryID: 1, Date: time.Now()})
+		assert.NoError(t, err1)
+		err2 := repo.CreateTransaction(&models.Transaction{UserID: user.ID, Type: "income", Amount: 150, CategoryID: 2, Date: time.Now()})
+		assert.NoError(t, err2)
 
 		transactions, err := repo.GetTransactionsByUserID(user.ID)
 		assert.NoError(t, err)
@@ -112,7 +115,8 @@ func TestTransactionRepository(t *testing.T) {
 			Date:       time.Now(),
 			Note:       "To be deleted",
 		}
-		repo.CreateTransaction(transaction)
+		err1 := repo.CreateTransaction(transaction)
+		assert.NoError(t, err1)
 
 		err := repo.DeleteTransaction(transaction.ID)
 		assert.NoError(t, err)

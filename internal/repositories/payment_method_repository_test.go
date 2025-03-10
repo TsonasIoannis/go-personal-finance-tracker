@@ -12,7 +12,7 @@ import (
 // setupTestDB initializes an in-memory SQLite database for testing.
 func setupPaymentTestDB() *gorm.DB {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	db.AutoMigrate(&models.User{}, &models.PaymentMethod{})
+	_ = db.AutoMigrate(&models.User{}, &models.PaymentMethod{})
 	return db
 }
 
@@ -59,7 +59,8 @@ func TestGetPaymentMethodByID(t *testing.T) {
 
 	t.Run("Retrieve existing payment method", func(t *testing.T) {
 		paymentMethod := &models.PaymentMethod{Name: "Debit Card", UserID: user.ID}
-		repo.CreatePaymentMethod(paymentMethod)
+		err := repo.CreatePaymentMethod(paymentMethod)
+		assert.NoError(t, err)
 
 		foundPaymentMethod, err := repo.GetPaymentMethodByID(paymentMethod.ID)
 		assert.NoError(t, err)
@@ -87,8 +88,10 @@ func TestGetPaymentMethodsByUserID(t *testing.T) {
 	t.Run("User has multiple payment methods", func(t *testing.T) {
 		paymentMethod1 := &models.PaymentMethod{Name: "Apple Pay", UserID: user.ID}
 		paymentMethod2 := &models.PaymentMethod{Name: "Google Pay", UserID: user.ID}
-		repo.CreatePaymentMethod(paymentMethod1)
-		repo.CreatePaymentMethod(paymentMethod2)
+		err1 := repo.CreatePaymentMethod(paymentMethod1)
+		assert.NoError(t, err1)
+		err2 := repo.CreatePaymentMethod(paymentMethod2)
+		assert.NoError(t, err2)
 
 		paymentMethods, err := repo.GetPaymentMethodsByUserID(user.ID)
 		assert.NoError(t, err)
@@ -113,7 +116,8 @@ func TestUpdatePaymentMethod(t *testing.T) {
 
 	t.Run("Update existing payment method", func(t *testing.T) {
 		paymentMethod := &models.PaymentMethod{Name: "Bank Transfer", UserID: user.ID}
-		repo.CreatePaymentMethod(paymentMethod)
+		err1 := repo.CreatePaymentMethod(paymentMethod)
+		assert.NoError(t, err1)
 
 		// Update the payment method
 		paymentMethod.Name = "Wire Transfer"
@@ -139,7 +143,8 @@ func TestDeletePaymentMethod(t *testing.T) {
 
 	t.Run("Delete existing payment method", func(t *testing.T) {
 		paymentMethod := &models.PaymentMethod{Name: "Venmo", UserID: user.ID}
-		repo.CreatePaymentMethod(paymentMethod)
+		err1 := repo.CreatePaymentMethod(paymentMethod)
+		assert.NoError(t, err1)
 
 		err := repo.DeletePaymentMethod(paymentMethod.ID)
 		assert.NoError(t, err)
