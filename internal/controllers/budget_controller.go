@@ -9,10 +9,11 @@ import (
 )
 
 type BudgetController struct {
-	budgetService *services.BudgetService
+	budgetService services.BudgetService
 }
 
-func NewBudgetController(budgetService *services.BudgetService) *BudgetController {
+// NewBudgetController initializes a BudgetController with an interface dependency
+func NewBudgetController(budgetService services.BudgetService) *BudgetController {
 	return &BudgetController{budgetService: budgetService}
 }
 
@@ -25,8 +26,7 @@ func (bc *BudgetController) CreateBudget(c *gin.Context) {
 		return
 	}
 
-	err := bc.budgetService.CreateBudget(&budget)
-	if err != nil {
+	if err := bc.budgetService.CreateBudget(&budget); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -51,8 +51,7 @@ func (bc *BudgetController) GetBudgets(c *gin.Context) {
 func (bc *BudgetController) DeleteBudget(c *gin.Context) {
 	budgetID := uint(1) // Extract from URL params in real implementation
 
-	err := bc.budgetService.DeleteBudget(budgetID)
-	if err != nil {
+	if err := bc.budgetService.DeleteBudget(budgetID); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Budget not found"})
 		return
 	}
