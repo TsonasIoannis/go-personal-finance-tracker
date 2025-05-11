@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+# [1.4.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.3.0...v1.4.0) (2025-05-11)
+
+
+### Features
+
+* add controllers ([5f16dde](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/5f16dde39b24e6d0bf43a0be0a58449828d677e4))
+
 # [1.3.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.2.0...v1.3.0) (2025-03-10)
 
 
