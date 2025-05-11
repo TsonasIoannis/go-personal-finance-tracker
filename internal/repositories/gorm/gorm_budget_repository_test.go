@@ -24,7 +24,7 @@ func setupBudgetTestDB() *gorm.DB {
 // TestCreateBudget tests different cases for creating a budget.
 func TestCreateBudget(t *testing.T) {
 	db := setupBudgetTestDB()
-	repo := NewBudgetRepository(db)
+	repo := NewGormBudgetRepository(db)
 
 	t.Run("Create valid budget", func(t *testing.T) {
 		budget := &models.Budget{
@@ -48,7 +48,7 @@ func TestCreateBudget(t *testing.T) {
 // TestGetBudgetByID tests retrieving a budget by ID.
 func TestGetBudgetByID(t *testing.T) {
 	db := setupBudgetTestDB()
-	repo := NewBudgetRepository(db)
+	repo := NewGormBudgetRepository(db)
 
 	t.Run("Retrieve existing budget", func(t *testing.T) {
 		budget := &models.Budget{
@@ -80,7 +80,7 @@ func TestGetBudgetByID(t *testing.T) {
 // TestGetBudgetsByUserID tests retrieving budgets by user ID.
 func TestGetBudgetsByUserID(t *testing.T) {
 	db := setupBudgetTestDB()
-	repo := NewBudgetRepository(db)
+	repo := NewGormBudgetRepository(db)
 
 	// Ensure a clean state before running the test
 	db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.Budget{})
@@ -120,7 +120,7 @@ func TestGetBudgetsByUserID(t *testing.T) {
 // TestDeleteBudget tests deleting a budget.
 func TestDeleteBudget(t *testing.T) {
 	db := setupBudgetTestDB()
-	repo := NewBudgetRepository(db)
+	repo := NewGormBudgetRepository(db)
 
 	t.Run("Delete existing budget", func(t *testing.T) {
 		budget := &models.Budget{
@@ -146,7 +146,7 @@ func TestDeleteBudget(t *testing.T) {
 // TestUpdateBudget tests updating an existing budget.
 func TestUpdateBudget(t *testing.T) {
 	db := setupBudgetTestDB()
-	repo := NewBudgetRepository(db)
+	repo := NewGormBudgetRepository(db)
 
 	// Ensure related entities exist
 	user := &models.User{Name: "Test User", Email: "test@example.com", Password: "hashedpassword"}
