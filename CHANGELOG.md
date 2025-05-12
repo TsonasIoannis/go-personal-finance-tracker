@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+# [1.5.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.4.0...v1.5.0) (2025-05-12)
+
+
+### Features
+
+* add route setup ([aeb2c6a](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/aeb2c6a8ff7e47df9c92cbb613ea1392c26d9413))
+
 # [1.4.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.3.0...v1.4.0) (2025-05-11)
 
 
