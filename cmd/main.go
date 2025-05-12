@@ -3,8 +3,12 @@ package main
 import (
 	"log"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/controllers"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/handlers"
+	repositories "github.com/TsonasIoannis/go-personal-finance-tracker/internal/repositories/gorm"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/routes"
+	services "github.com/TsonasIoannis/go-personal-finance-tracker/internal/services/default"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,6 +33,25 @@ func main() {
 
 	// Create a new Gin router
 	r := gin.Default()
+
+	gormDB := db.GetDB()
+	// Repositories
+	userRepo := repositories.NewUserRepository(gormDB)
+	transactionRepo := repositories.NewTransactionRepository(gormDB)
+	budgetRepo := repositories.NewGormBudgetRepository(gormDB)
+
+	// Services
+	userService := services.NewUserService(userRepo)
+	transactionService := services.NewTransactionService(transactionRepo, budgetRepo)
+	budgetService := services.NewBudgetService(budgetRepo)
+
+	// Controllers
+	userController := controllers.NewUserController(userService)
+	transactionController := controllers.NewTransactionController(transactionService)
+	budgetController := controllers.NewBudgetController(budgetService)
+
+	// Register API routes
+	routes.SetupRoutes(r, userController, transactionController, budgetController)
 
 	// Register health & readiness routes
 	r.GET("/health", handlers.HealthCheckHandler)
