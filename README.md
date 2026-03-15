@@ -37,25 +37,25 @@ It demonstrates:
 
 ### Public
 
-| Method | Endpoint    | Description |
-| ------ | ----------- | ----------- |
-| POST   | `/register` | Register a user and return a token |
+| Method | Endpoint    | Description                            |
+| ------ | ----------- | -------------------------------------- |
+| POST   | `/register` | Register a user and return a token     |
 | POST   | `/login`    | Authenticate a user and return a token |
-| GET    | `/health`   | Liveness probe |
+| GET    | `/health`   | Liveness probe                         |
 | GET    | `/ready`    | Readiness probe backed by the database |
 
 ### Protected
 
 These endpoints require `Authorization: Bearer <token>`.
 
-| Method | Endpoint            | Description |
-| ------ | ------------------- | ----------- |
-| GET    | `/transactions`     | List the authenticated user's transactions |
-| POST   | `/transactions`     | Create a transaction for the authenticated user |
+| Method | Endpoint            | Description                                         |
+| ------ | ------------------- | --------------------------------------------------- |
+| GET    | `/transactions`     | List the authenticated user's transactions          |
+| POST   | `/transactions`     | Create a transaction for the authenticated user     |
 | DELETE | `/transactions/:id` | Delete one of the authenticated user's transactions |
-| GET    | `/budgets`          | List the authenticated user's budgets |
-| POST   | `/budgets`          | Create a budget for the authenticated user |
-| DELETE | `/budgets/:id`      | Delete one of the authenticated user's budgets |
+| GET    | `/budgets`          | List the authenticated user's budgets               |
+| POST   | `/budgets`          | Create a budget for the authenticated user          |
+| DELETE | `/budgets/:id`      | Delete one of the authenticated user's budgets      |
 
 ## Project Structure
 
@@ -81,11 +81,11 @@ internal/
 
 The app uses these environment variables:
 
-| Variable | Required | Description |
-| -------- | -------- | ----------- |
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `JWT_SECRET` | Yes | Secret used to sign auth tokens |
-| `PORT` | No | HTTP port, defaults to `8080` |
+| Variable       | Required | Description                     |
+| -------------- | -------- | ------------------------------- |
+| `DATABASE_URL` | Yes      | PostgreSQL connection string    |
+| `JWT_SECRET`   | Yes      | Secret used to sign auth tokens |
+| `PORT`         | No       | HTTP port, defaults to `8080`   |
 
 An example file is included at [.env.example](c:/Users/Trelobarbouni/Documents/GitHub/go-personal-finance-tracker/.env.example).
 
