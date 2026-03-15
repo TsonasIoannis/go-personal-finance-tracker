@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+# [1.6.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.5.0...v1.6.0) (2026-03-15)
+
+
+### Features
+
+* add auth hardening ([a97480f](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/a97480f587a856b9f462e7fb481aefc9bd337e77))
+
 # [1.5.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.4.0...v1.5.0) (2025-05-12)
 
 
