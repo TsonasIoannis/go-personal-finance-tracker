@@ -6,13 +6,13 @@ import (
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 // setupTestDB initializes an in-memory SQLite database for testing.
-func setupBudgetTestDB() *gorm.DB {
-	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+func setupBudgetTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db := openSQLiteTestDB(t)
 	_ = db.AutoMigrate(
 		&models.Budget{},
 		&models.User{},
@@ -23,7 +23,7 @@ func setupBudgetTestDB() *gorm.DB {
 
 // TestCreateBudget tests different cases for creating a budget.
 func TestCreateBudget(t *testing.T) {
-	db := setupBudgetTestDB()
+	db := setupBudgetTestDB(t)
 	repo := NewGormBudgetRepository(db)
 
 	t.Run("Create valid budget", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestCreateBudget(t *testing.T) {
 
 // TestGetBudgetByID tests retrieving a budget by ID.
 func TestGetBudgetByID(t *testing.T) {
-	db := setupBudgetTestDB()
+	db := setupBudgetTestDB(t)
 	repo := NewGormBudgetRepository(db)
 
 	t.Run("Retrieve existing budget", func(t *testing.T) {
@@ -79,7 +79,7 @@ func TestGetBudgetByID(t *testing.T) {
 
 // TestGetBudgetsByUserID tests retrieving budgets by user ID.
 func TestGetBudgetsByUserID(t *testing.T) {
-	db := setupBudgetTestDB()
+	db := setupBudgetTestDB(t)
 	repo := NewGormBudgetRepository(db)
 
 	// Ensure a clean state before running the test
@@ -119,7 +119,7 @@ func TestGetBudgetsByUserID(t *testing.T) {
 
 // TestDeleteBudget tests deleting a budget.
 func TestDeleteBudget(t *testing.T) {
-	db := setupBudgetTestDB()
+	db := setupBudgetTestDB(t)
 	repo := NewGormBudgetRepository(db)
 
 	t.Run("Delete existing budget", func(t *testing.T) {
@@ -145,7 +145,7 @@ func TestDeleteBudget(t *testing.T) {
 
 // TestUpdateBudget tests updating an existing budget.
 func TestUpdateBudget(t *testing.T) {
-	db := setupBudgetTestDB()
+	db := setupBudgetTestDB(t)
 	repo := NewGormBudgetRepository(db)
 
 	// Ensure related entities exist

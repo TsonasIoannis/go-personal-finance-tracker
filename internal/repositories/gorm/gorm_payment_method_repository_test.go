@@ -5,20 +5,20 @@ import (
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 // setupTestDB initializes an in-memory SQLite database for testing.
-func setupPaymentTestDB() *gorm.DB {
-	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+func setupPaymentTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db := openSQLiteTestDB(t)
 	_ = db.AutoMigrate(&models.User{}, &models.PaymentMethod{})
 	return db
 }
 
 // TestCreatePaymentMethod tests different cases for creating a payment method.
 func TestCreatePaymentMethod(t *testing.T) {
-	db := setupPaymentTestDB()
+	db := setupPaymentTestDB(t)
 	repo := NewPaymentMethodRepository(db)
 
 	// Ensure related entity (User) exists
@@ -50,7 +50,7 @@ func TestCreatePaymentMethod(t *testing.T) {
 
 // TestGetPaymentMethodByID tests retrieving a payment method by ID.
 func TestGetPaymentMethodByID(t *testing.T) {
-	db := setupPaymentTestDB()
+	db := setupPaymentTestDB(t)
 	repo := NewPaymentMethodRepository(db)
 
 	// Ensure related entity (User) exists
@@ -78,7 +78,7 @@ func TestGetPaymentMethodByID(t *testing.T) {
 
 // TestGetPaymentMethodsByUserID tests retrieving all payment methods for a specific user.
 func TestGetPaymentMethodsByUserID(t *testing.T) {
-	db := setupPaymentTestDB()
+	db := setupPaymentTestDB(t)
 	repo := NewPaymentMethodRepository(db)
 
 	// Ensure related entity (User) exists
@@ -107,7 +107,7 @@ func TestGetPaymentMethodsByUserID(t *testing.T) {
 
 // TestUpdatePaymentMethod tests updating an existing payment method.
 func TestUpdatePaymentMethod(t *testing.T) {
-	db := setupPaymentTestDB()
+	db := setupPaymentTestDB(t)
 	repo := NewPaymentMethodRepository(db)
 
 	// Ensure related entity (User) exists
@@ -134,7 +134,7 @@ func TestUpdatePaymentMethod(t *testing.T) {
 
 // TestDeletePaymentMethod tests deleting a payment method.
 func TestDeletePaymentMethod(t *testing.T) {
-	db := setupPaymentTestDB()
+	db := setupPaymentTestDB(t)
 	repo := NewPaymentMethodRepository(db)
 
 	// Ensure related entity (User) exists

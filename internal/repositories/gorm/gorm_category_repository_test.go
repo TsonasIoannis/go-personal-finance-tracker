@@ -5,20 +5,20 @@ import (
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 // setupTestDB initializes an in-memory SQLite database for testing.
-func setupCategoryTestDB() *gorm.DB {
-	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+func setupCategoryTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db := openSQLiteTestDB(t)
 	_ = db.AutoMigrate(&models.Category{})
 	return db
 }
 
 // TestCreateCategory tests different cases for creating a category.
 func TestCreateCategory(t *testing.T) {
-	db := setupCategoryTestDB()
+	db := setupCategoryTestDB(t)
 	repo := NewCategoryRepository(db)
 
 	t.Run("Create valid category", func(t *testing.T) {
@@ -46,7 +46,7 @@ func TestCreateCategory(t *testing.T) {
 
 // TestGetCategoryByID tests retrieving a category by ID.
 func TestGetCategoryByID(t *testing.T) {
-	db := setupCategoryTestDB()
+	db := setupCategoryTestDB(t)
 	repo := NewCategoryRepository(db)
 
 	t.Run("Retrieve existing category", func(t *testing.T) {
@@ -70,7 +70,7 @@ func TestGetCategoryByID(t *testing.T) {
 
 // TestGetAllCategories tests retrieving all categories.
 func TestGetAllCategories(t *testing.T) {
-	db := setupCategoryTestDB()
+	db := setupCategoryTestDB(t)
 	repo := NewCategoryRepository(db)
 
 	t.Run("Retrieve multiple categories", func(t *testing.T) {
@@ -97,7 +97,7 @@ func TestGetAllCategories(t *testing.T) {
 
 // TestDeleteCategory tests deleting a category.
 func TestDeleteCategory(t *testing.T) {
-	db := setupCategoryTestDB()
+	db := setupCategoryTestDB(t)
 	repo := NewCategoryRepository(db)
 
 	t.Run("Delete existing category", func(t *testing.T) {
@@ -122,7 +122,7 @@ func TestDeleteCategory(t *testing.T) {
 
 // TestUpdateCategory tests updating an existing category.
 func TestUpdateCategory(t *testing.T) {
-	db := setupCategoryTestDB()
+	db := setupCategoryTestDB(t)
 	repo := NewCategoryRepository(db)
 
 	t.Run("Update existing category", func(t *testing.T) {

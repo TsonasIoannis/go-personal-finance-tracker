@@ -6,19 +6,19 @@ import (
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 // setupTransactionTestDB initializes an in-memory SQLite database for testing.
-func setupTransactionTestDB() *gorm.DB {
-	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+func setupTransactionTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db := openSQLiteTestDB(t)
 	_ = db.AutoMigrate(&models.User{}, &models.Transaction{})
 	return db
 }
 
 func TestTransactionRepository(t *testing.T) {
-	db := setupTransactionTestDB()
+	db := setupTransactionTestDB(t)
 	repo := NewTransactionRepository(db)
 
 	// Create a test user for transactions
