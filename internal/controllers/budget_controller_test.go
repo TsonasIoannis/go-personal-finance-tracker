@@ -30,8 +30,8 @@ func (m *MockBudgetService) GetBudgetsByUser(userID uint) ([]models.Budget, erro
 	return args.Get(0).([]models.Budget), args.Error(1)
 }
 
-func (m *MockBudgetService) DeleteBudget(budgetID uint) error {
-	args := m.Called(budgetID)
+func (m *MockBudgetService) DeleteBudgetForUser(userID, budgetID uint) error {
+	args := m.Called(userID, budgetID)
 	return args.Error(0)
 }
 
@@ -47,26 +47,28 @@ func TestCreateBudget(t *testing.T) {
 		mockService := new(MockBudgetService)
 		controller := NewBudgetController(mockService)
 
-		budget := models.Budget{
-			UserID:     1,
-			CategoryID: 2,
-			Limit:      1000,
-			StartDate:  time.Now().UTC(),
-			EndDate:    time.Now().AddDate(0, 1, 0).UTC(),
+		startDate := time.Now().UTC().Round(time.Second)
+		endDate := startDate.AddDate(0, 1, 0)
+		budgetPayload := map[string]interface{}{
+			"category_id": 2,
+			"limit":       1000.0,
+			"start_date":  startDate.Format(time.RFC3339),
+			"end_date":    endDate.Format(time.RFC3339),
 		}
 
 		mockService.On("CreateBudget", mock.MatchedBy(func(b *models.Budget) bool {
-			return b.UserID == budget.UserID &&
-				b.CategoryID == budget.CategoryID &&
-				b.Limit == budget.Limit &&
-				b.StartDate.Equal(budget.StartDate) &&
-				b.EndDate.Equal(budget.EndDate)
+			return b.UserID == 1 &&
+				b.CategoryID == 2 &&
+				b.Limit == 1000 &&
+				b.StartDate.Equal(startDate) &&
+				b.EndDate.Equal(endDate)
 		})).Return(nil).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
+		c.Set("userID", uint(1))
 
-		jsonBody, _ := json.Marshal(budget)
+		jsonBody, _ := json.Marshal(budgetPayload)
 		c.Request = httptest.NewRequest(http.MethodPost, "/budgets", bytes.NewBuffer(jsonBody))
 		c.Request.Header.Set("Content-Type", "application/json")
 
@@ -75,25 +77,26 @@ func TestCreateBudget(t *testing.T) {
 		assert.Equal(t, http.StatusCreated, w.Code)
 		assert.Contains(t, w.Body.String(), "Budget created")
 	})
+
 	t.Run("Invalid Limit", func(t *testing.T) {
 		mockService := new(MockBudgetService)
 		controller := NewBudgetController(mockService)
 
-		budget := models.Budget{
-			UserID:     1,
-			CategoryID: 2,
-			Limit:      0, // Invalid
-			StartDate:  time.Now().UTC(),
-			EndDate:    time.Now().AddDate(0, 1, 0).UTC(),
+		now := time.Now().UTC()
+		budgetPayload := map[string]interface{}{
+			"category_id": 2,
+			"limit":       0.0,
+			"start_date":  now.Format(time.RFC3339),
+			"end_date":    now.AddDate(0, 1, 0).Format(time.RFC3339),
 		}
 
-		mockService.On("CreateBudget", &budget).Return(errors.New("budget limit must be greater than zero")).Once()
+		mockService.On("CreateBudget", mock.AnythingOfType("*models.Budget")).Return(errors.New("budget limit must be greater than zero")).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
+		c.Set("userID", uint(1))
 
-		// Encode JSON
-		jsonBody, _ := json.Marshal(budget)
+		jsonBody, _ := json.Marshal(budgetPayload)
 		c.Request = httptest.NewRequest(http.MethodPost, "/budgets", bytes.NewBuffer(jsonBody))
 		c.Request.Header.Set("Content-Type", "application/json")
 
@@ -107,21 +110,22 @@ func TestCreateBudget(t *testing.T) {
 		mockService := new(MockBudgetService)
 		controller := NewBudgetController(mockService)
 
-		budget := models.Budget{
-			UserID:     1,
-			CategoryID: 2,
-			Limit:      500,
-			StartDate:  time.Now().AddDate(0, 1, 0).UTC(), // Start after End
-			EndDate:    time.Now().UTC(),
+		startDate := time.Now().AddDate(0, 1, 0).UTC()
+		endDate := time.Now().UTC()
+		budgetPayload := map[string]interface{}{
+			"category_id": 2,
+			"limit":       500.0,
+			"start_date":  startDate.Format(time.RFC3339),
+			"end_date":    endDate.Format(time.RFC3339),
 		}
 
-		mockService.On("CreateBudget", &budget).Return(errors.New("start date cannot be after end date")).Once()
+		mockService.On("CreateBudget", mock.AnythingOfType("*models.Budget")).Return(errors.New("start date cannot be after end date")).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
+		c.Set("userID", uint(1))
 
-		// Encode JSON
-		jsonBody, _ := json.Marshal(budget)
+		jsonBody, _ := json.Marshal(budgetPayload)
 		c.Request = httptest.NewRequest(http.MethodPost, "/budgets", bytes.NewBuffer(jsonBody))
 		c.Request.Header.Set("Content-Type", "application/json")
 
@@ -130,22 +134,21 @@ func TestCreateBudget(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "start date cannot be after end date")
 	})
+
 	t.Run("Invalid JSON Payload", func(t *testing.T) {
 		mockService := new(MockBudgetService)
 		controller := NewBudgetController(mockService)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
+		c.Set("userID", uint(1))
 
-		// Send malformed JSON (missing closing brace)
-		invalidJSON := `{"UserID": 1, "CategoryID": 2, "Limit": 1000, "StartDate": "2025-03-12T01:06:59Z", "EndDate": "2025-04-12T01:06:59Z"`
+		invalidJSON := `{"category_id": 2, "limit": 1000, "start_date": "2025-03-12T01:06:59Z", "end_date": "2025-04-12T01:06:59Z"`
 		c.Request = httptest.NewRequest(http.MethodPost, "/budgets", bytes.NewBufferString(invalidJSON))
 		c.Request.Header.Set("Content-Type", "application/json")
 
-		// Call the controller method
 		controller.CreateBudget(c)
 
-		// Expect a 400 Bad Request response
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "Invalid request payload")
 	})
@@ -168,14 +171,12 @@ func TestGetBudgets(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-
+		c.Set("userID", uint(1))
 		c.Request = httptest.NewRequest(http.MethodGet, "/budgets", nil)
 
 		controller.GetBudgets(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-
-		// Check that both budgets appear in response
 		assert.Contains(t, w.Body.String(), `"Limit":1000`)
 		assert.Contains(t, w.Body.String(), `"Limit":500`)
 	})
@@ -188,7 +189,7 @@ func TestGetBudgets(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-
+		c.Set("userID", uint(1))
 		c.Request = httptest.NewRequest(http.MethodGet, "/budgets", nil)
 
 		controller.GetBudgets(c)
@@ -205,11 +206,12 @@ func TestDeleteBudget(t *testing.T) {
 		mockService := new(MockBudgetService)
 		controller := NewBudgetController(mockService)
 
-		mockService.On("DeleteBudget", uint(1)).Return(nil).Once()
+		mockService.On("DeleteBudgetForUser", uint(1), uint(1)).Return(nil).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-
+		c.Set("userID", uint(1))
+		c.Params = gin.Params{{Key: "id", Value: "1"}}
 		c.Request = httptest.NewRequest(http.MethodDelete, "/budgets/1", nil)
 
 		controller.DeleteBudget(c)
@@ -218,15 +220,32 @@ func TestDeleteBudget(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "Budget deleted")
 	})
 
+	t.Run("Invalid ID", func(t *testing.T) {
+		mockService := new(MockBudgetService)
+		controller := NewBudgetController(mockService)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Set("userID", uint(1))
+		c.Params = gin.Params{{Key: "id", Value: "oops"}}
+		c.Request = httptest.NewRequest(http.MethodDelete, "/budgets/oops", nil)
+
+		controller.DeleteBudget(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid budget id")
+	})
+
 	t.Run("Budget Not Found", func(t *testing.T) {
 		mockService := new(MockBudgetService)
 		controller := NewBudgetController(mockService)
 
-		mockService.On("DeleteBudget", uint(1)).Return(errors.New("not found")).Once()
+		mockService.On("DeleteBudgetForUser", uint(1), uint(1)).Return(errors.New("not found")).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-
+		c.Set("userID", uint(1))
+		c.Params = gin.Params{{Key: "id", Value: "1"}}
 		c.Request = httptest.NewRequest(http.MethodDelete, "/budgets/1", nil)
 
 		controller.DeleteBudget(c)

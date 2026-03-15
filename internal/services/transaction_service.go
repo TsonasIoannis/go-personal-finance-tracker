@@ -8,5 +8,5 @@ import (
 type TransactionService interface {
 	AddTransaction(transaction *models.Transaction) error
 	GetTransactionsByUser(userID uint) ([]models.Transaction, error)
-	DeleteTransaction(transactionID uint) error
+	DeleteTransactionForUser(userID, transactionID uint) error
 }

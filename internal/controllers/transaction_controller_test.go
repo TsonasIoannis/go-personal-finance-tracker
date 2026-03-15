@@ -30,8 +30,8 @@ func (m *MockTransactionService) GetTransactionsByUser(userID uint) ([]models.Tr
 	return args.Get(0).([]models.Transaction), args.Error(1)
 }
 
-func (m *MockTransactionService) DeleteTransaction(transactionID uint) error {
-	args := m.Called(transactionID)
+func (m *MockTransactionService) DeleteTransactionForUser(userID, transactionID uint) error {
+	args := m.Called(userID, transactionID)
 	return args.Error(0)
 }
 
@@ -42,27 +42,29 @@ func TestCreateTransaction(t *testing.T) {
 		mockService := new(MockTransactionService)
 		controller := NewTransactionController(mockService)
 
-		transaction := models.Transaction{
-			UserID:     1,
-			Amount:     50.0,
-			CategoryID: 2,
-			Type:       "expense",
-			Date:       time.Now().UTC(),
-			Note:       "Lunch",
+		now := time.Now().UTC().Round(time.Second)
+		payload := map[string]interface{}{
+			"amount":      50.0,
+			"category_id": 2,
+			"type":        "expense",
+			"date":        now.Format(time.RFC3339),
+			"note":        "Lunch",
 		}
 
 		mockService.On("AddTransaction", mock.MatchedBy(func(t *models.Transaction) bool {
-			return t.UserID == transaction.UserID &&
-				t.Amount == transaction.Amount &&
-				t.CategoryID == transaction.CategoryID &&
-				t.Type == transaction.Type &&
-				t.Note == transaction.Note
+			return t.UserID == 1 &&
+				t.Amount == 50.0 &&
+				t.CategoryID == 2 &&
+				t.Type == "expense" &&
+				t.Note == "Lunch" &&
+				t.Date.Equal(now)
 		})).Return(nil).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
+		c.Set("userID", uint(1))
 
-		jsonBody, _ := json.Marshal(transaction)
+		jsonBody, _ := json.Marshal(payload)
 		c.Request = httptest.NewRequest(http.MethodPost, "/transactions", bytes.NewBuffer(jsonBody))
 		c.Request.Header.Set("Content-Type", "application/json")
 
@@ -76,20 +78,21 @@ func TestCreateTransaction(t *testing.T) {
 		mockService := new(MockTransactionService)
 		controller := NewTransactionController(mockService)
 
-		transaction := models.Transaction{
-			UserID:     1,
-			Amount:     5000.0,
-			CategoryID: 2,
-			Type:       "expense",
-			Date:       time.Now().UTC(),
+		now := time.Now().UTC()
+		payload := map[string]interface{}{
+			"amount":      5000.0,
+			"category_id": 2,
+			"type":        "expense",
+			"date":        now.Format(time.RFC3339),
 		}
 
-		mockService.On("AddTransaction", &transaction).Return(errors.New("transaction exceeds budget limit")).Once()
+		mockService.On("AddTransaction", mock.AnythingOfType("*models.Transaction")).Return(errors.New("transaction exceeds budget limit")).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
+		c.Set("userID", uint(1))
 
-		jsonBody, _ := json.Marshal(transaction)
+		jsonBody, _ := json.Marshal(payload)
 		c.Request = httptest.NewRequest(http.MethodPost, "/transactions", bytes.NewBuffer(jsonBody))
 		c.Request.Header.Set("Content-Type", "application/json")
 
@@ -105,8 +108,9 @@ func TestCreateTransaction(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
+		c.Set("userID", uint(1))
 
-		badJSON := `{"UserID":1,"Amount":50.0,"CategoryID":2`
+		badJSON := `{"amount":50.0,"category_id":2`
 		c.Request = httptest.NewRequest(http.MethodPost, "/transactions", bytes.NewBufferString(badJSON))
 		c.Request.Header.Set("Content-Type", "application/json")
 
@@ -134,7 +138,7 @@ func TestGetTransactions(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-
+		c.Set("userID", uint(1))
 		c.Request = httptest.NewRequest(http.MethodGet, "/transactions", nil)
 
 		controller.GetTransactions(c)
@@ -152,7 +156,7 @@ func TestGetTransactions(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-
+		c.Set("userID", uint(1))
 		c.Request = httptest.NewRequest(http.MethodGet, "/transactions", nil)
 
 		controller.GetTransactions(c)
@@ -169,11 +173,12 @@ func TestDeleteTransaction(t *testing.T) {
 		mockService := new(MockTransactionService)
 		controller := NewTransactionController(mockService)
 
-		mockService.On("DeleteTransaction", uint(1)).Return(nil).Once()
+		mockService.On("DeleteTransactionForUser", uint(1), uint(1)).Return(nil).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-
+		c.Set("userID", uint(1))
+		c.Params = gin.Params{{Key: "id", Value: "1"}}
 		c.Request = httptest.NewRequest(http.MethodDelete, "/transactions/1", nil)
 
 		controller.DeleteTransaction(c)
@@ -182,15 +187,32 @@ func TestDeleteTransaction(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "Transaction deleted")
 	})
 
+	t.Run("Invalid ID", func(t *testing.T) {
+		mockService := new(MockTransactionService)
+		controller := NewTransactionController(mockService)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Set("userID", uint(1))
+		c.Params = gin.Params{{Key: "id", Value: "abc"}}
+		c.Request = httptest.NewRequest(http.MethodDelete, "/transactions/abc", nil)
+
+		controller.DeleteTransaction(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid transaction id")
+	})
+
 	t.Run("Not Found", func(t *testing.T) {
 		mockService := new(MockTransactionService)
 		controller := NewTransactionController(mockService)
 
-		mockService.On("DeleteTransaction", uint(1)).Return(errors.New("not found")).Once()
+		mockService.On("DeleteTransactionForUser", uint(1), uint(1)).Return(errors.New("not found")).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-
+		c.Set("userID", uint(1))
+		c.Params = gin.Params{{Key: "id", Value: "1"}}
 		c.Request = httptest.NewRequest(http.MethodDelete, "/transactions/1", nil)
 
 		controller.DeleteTransaction(c)

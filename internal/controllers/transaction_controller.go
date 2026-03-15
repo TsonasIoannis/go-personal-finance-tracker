@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/services"
@@ -16,13 +18,34 @@ func NewTransactionController(transactionService services.TransactionService) *T
 	return &TransactionController{transactionService: transactionService}
 }
 
+type createTransactionRequest struct {
+	Type       string    `json:"type" binding:"required"`
+	Amount     float64   `json:"amount" binding:"required"`
+	CategoryID uint      `json:"category_id" binding:"required"`
+	Date       time.Time `json:"date" binding:"required"`
+	Note       string    `json:"note"`
+}
+
 // CreateTransaction adds a new transaction
 func (tc *TransactionController) CreateTransaction(c *gin.Context) {
-	var transaction models.Transaction
+	userID, ok := currentUserID(c)
+	if !ok {
+		return
+	}
 
-	if err := c.ShouldBindJSON(&transaction); err != nil {
+	var req createTransactionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
+	}
+
+	transaction := models.Transaction{
+		UserID:     userID,
+		Type:       req.Type,
+		Amount:     req.Amount,
+		CategoryID: req.CategoryID,
+		Date:       req.Date,
+		Note:       req.Note,
 	}
 
 	err := tc.transactionService.AddTransaction(&transaction)
@@ -36,7 +59,10 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 
 // GetTransactions fetches all transactions for a user
 func (tc *TransactionController) GetTransactions(c *gin.Context) {
-	userID := uint(1) // Later, extract from JWT or request context
+	userID, ok := currentUserID(c)
+	if !ok {
+		return
+	}
 
 	transactions, err := tc.transactionService.GetTransactionsByUser(userID)
 	if err != nil {
@@ -49,9 +75,18 @@ func (tc *TransactionController) GetTransactions(c *gin.Context) {
 
 // DeleteTransaction removes a transaction
 func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
-	transactionID := uint(1) // Extract from URL params in real implementation
+	userID, ok := currentUserID(c)
+	if !ok {
+		return
+	}
 
-	err := tc.transactionService.DeleteTransaction(transactionID)
+	transactionID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transaction id"})
+		return
+	}
+
+	err = tc.transactionService.DeleteTransactionForUser(userID, uint(transactionID))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
 		return

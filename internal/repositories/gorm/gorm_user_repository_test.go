@@ -5,18 +5,18 @@ import (
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-func setupTestDB() *gorm.DB {
-	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+func setupTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db := openSQLiteTestDB(t)
 	_ = db.AutoMigrate(&models.User{})
 	return db
 }
 
 func TestUserRepository(t *testing.T) {
-	db := setupTestDB()
+	db := setupTestDB(t)
 	repo := NewUserRepository(db)
 
 	t.Run("should create a new user", func(t *testing.T) {

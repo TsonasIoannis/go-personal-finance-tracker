@@ -142,19 +142,29 @@ func TestDeleteTransaction(t *testing.T) {
 	service := NewTransactionService(mockTransactionRepo, nil)
 
 	t.Run("Delete existing transaction", func(t *testing.T) {
+		mockTransactionRepo.On("GetTransactionByID", uint(1)).Return(&models.Transaction{ID: 1, UserID: 1}, nil)
 		mockTransactionRepo.On("DeleteTransaction", uint(1)).Return(nil)
 
-		err := service.DeleteTransaction(1)
+		err := service.DeleteTransactionForUser(1, 1)
 		assert.NoError(t, err)
 		mockTransactionRepo.AssertExpectations(t)
 	})
 
 	t.Run("Fail to delete non-existent transaction", func(t *testing.T) {
-		mockTransactionRepo.On("DeleteTransaction", uint(9999)).Return(errors.New("transaction not found"))
+		mockTransactionRepo.On("GetTransactionByID", uint(9999)).Return(nil, errors.New("transaction not found"))
 
-		err := service.DeleteTransaction(9999)
+		err := service.DeleteTransactionForUser(1, 9999)
 		assert.Error(t, err)
 		assert.Equal(t, "transaction not found", err.Error())
 		mockTransactionRepo.AssertExpectations(t)
+	})
+
+	t.Run("Fail to delete another user's transaction", func(t *testing.T) {
+		mockTransactionRepo.On("GetTransactionByID", uint(2)).Return(&models.Transaction{ID: 2, UserID: 99}, nil)
+
+		err := service.DeleteTransactionForUser(1, 2)
+		assert.Error(t, err)
+		assert.Equal(t, "transaction not found", err.Error())
+		mockTransactionRepo.AssertNotCalled(t, "DeleteTransaction", uint(2))
 	})
 }

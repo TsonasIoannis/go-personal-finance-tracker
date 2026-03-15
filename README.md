@@ -1,106 +1,189 @@
-# Personal Finance Tracker
+# Personal Finance Tracker API
 
-## Description
+This repository is a portfolio-style Go backend project that illustrates how to build a small API layer with:
 
-A simple personal finance tracker API built with Golang and PostgreSQL. This project allows users to track their income, expenses, and budgets in a structured manner. It provides authentication, basic financial reports, and a RESTful API for managing transactions.
+- Gin for HTTP routing
+- GORM for persistence
+- PostgreSQL as the primary database
+- layered controller/service/repository structure
+- token-based authentication
+- Docker for local development
+- unit tests across handlers, services, database, and repositories
+
+## What The Project Demonstrates
+
+The current implementation focuses on a realistic backend slice rather than a huge feature set.
+
+It demonstrates:
+
+- user registration and login
+- signed auth token generation
+- protected routes with middleware
+- budget and transaction APIs tied to the authenticated user
+- service-layer validation
+- readiness and health endpoints
+- Docker-based local startup
+- a passing `go test ./...` suite
 
 ## Tech Stack
 
-- **Language**: Golang
-- **Framework**: Gin (for API handling)
-- **Database**: PostgreSQL
-- **ORM**: GORM
-- **Authentication**: JWT (golang-jwt)
-- **Deployment**: Docker
+- Go
+- Gin
+- GORM
+- PostgreSQL
+- Docker Compose
 
-## Features
+## Current Endpoints
 
-- User authentication (JWT-based)
-- CRUD operations for transactions (income & expenses)
-- Monthly budget tracking
-- Secure API with middleware
-- Docker support for easy deployment
+### Public
+
+| Method | Endpoint    | Description                            |
+| ------ | ----------- | -------------------------------------- |
+| POST   | `/register` | Register a user and return a token     |
+| POST   | `/login`    | Authenticate a user and return a token |
+| GET    | `/health`   | Liveness probe                         |
+| GET    | `/ready`    | Readiness probe backed by the database |
+
+### Protected
+
+These endpoints require `Authorization: Bearer <token>`.
+
+| Method | Endpoint            | Description                                         |
+| ------ | ------------------- | --------------------------------------------------- |
+| GET    | `/transactions`     | List the authenticated user's transactions          |
+| POST   | `/transactions`     | Create a transaction for the authenticated user     |
+| DELETE | `/transactions/:id` | Delete one of the authenticated user's transactions |
+| GET    | `/budgets`          | List the authenticated user's budgets               |
+| POST   | `/budgets`          | Create a budget for the authenticated user          |
+| DELETE | `/budgets/:id`      | Delete one of the authenticated user's budgets      |
 
 ## Project Structure
 
-```bash
-personal-finance-tracker/
-│── cmd/                     # Entry point for the app
-│   ├── main.go               # Initializes and runs the app
-│
-│── config/                   # Configuration files
-│   ├── config.go             # Loads environment variables
-│
-│── models/                   # Database models
-│   ├── user.go               # User model
-│   ├── transaction.go        # Transaction model
-│
-│── controllers/              # Handles API requests
-│   ├── user_controller.go    # User-related endpoints
-│   ├── transaction_controller.go # Transaction-related endpoints
-│
-│── routes/                   # API routes
-│   ├── routes.go             # Initializes all routes
-│
-│── services/                 # Business logic
-│   ├── user_service.go       # Handles user-related logic
-│   ├── transaction_service.go # Handles transaction logic
-│
-│── repository/               # Database interaction
-│   ├── user_repository.go    # User-related database queries
-│   ├── transaction_repository.go # Transaction-related queries
-│
-│── middleware/               # Authentication and validation
-│   ├── auth_middleware.go    # JWT authentication middleware
-│
-│── db/                       # Database connection
-│   ├── database.go           # Initializes database connection
-│
-│── utils/                    # Helper functions
-│   ├── jwt.go                # JWT token functions
-│
-│── .env                      # Environment variables (DB credentials, JWT secret)
-│── docker-compose.yml        # Docker setup for PostgreSQL
-│── go.mod                    # Dependencies
-│── go.sum                    # Checksums
-│── LICENSE                   # Project license
-│── README.md                 # Project documentation
+```text
+cmd/
+  main.go                  application entrypoint
+
+internal/
+  auth/                    token generation and parsing
+  controllers/             HTTP handlers and request/response binding
+  database/                database connection and migrations
+  handlers/                health and readiness handlers
+  middleware/              route middleware
+  models/                  GORM models
+  repositories/            repository interfaces
+  repositories/gorm/       GORM-backed repository implementations
+  routes/                  route registration
+  services/                service interfaces
+  services/default/        default service implementations
 ```
 
-## Installation
+## Configuration
 
-### Prerequisites
+The app uses these environment variables:
 
-- Golang installed
-- Docker & Docker Compose
-- PostgreSQL database (or use Docker setup)
+| Variable       | Required | Description                     |
+| -------------- | -------- | ------------------------------- |
+| `DATABASE_URL` | Yes      | PostgreSQL connection string    |
+| `JWT_SECRET`   | Yes      | Secret used to sign auth tokens |
+| `PORT`         | No       | HTTP port, defaults to `8080`   |
 
-### Setup
+An example file is included at [.env.example](c:/Users/Trelobarbouni/Documents/GitHub/go-personal-finance-tracker/.env.example).
+
+## Run With Docker
+
+Start the API and PostgreSQL:
 
 ```sh
-git clone https://github.com/TsonasIoannis/go-personal-finance-tracker.git
-cd go-personal-finance-tracker
-cp .env.example .env  # Configure environment variables
+docker-compose up --build
 ```
 
-### Running Locally
+Then verify the service:
 
 ```sh
-docker-compose up -d  # Starts PostgreSQL
-
-# Run the application
-go run cmd/main.go
+curl http://localhost:8080/health
+curl http://localhost:8080/ready
 ```
 
-## API Endpoints
+## Run Locally Without Docker For The App
 
-| Method | Endpoint            | Description                 |
-| ------ | ------------------- | --------------------------- |
-| POST   | `/register`         | Register a new user         |
-| POST   | `/login`            | Authenticate user & get JWT |
-| GET    | `/transactions`     | Get all transactions        |
-| POST   | `/transactions`     | Add a new transaction       |
-| DELETE | `/transactions/:id` | Delete a transaction        |
+You can still use Docker for PostgreSQL and run the Go process directly.
+
+1. Start the database:
+
+```sh
+docker-compose up -d db
+```
+
+2. Set environment variables:
+
+```powershell
+$env:DATABASE_URL="postgres://user:password@localhost:5432/personal_finance_db?sslmode=disable"
+$env:JWT_SECRET="dev-secret"
+$env:PORT="8080"
+```
+
+3. Run the API:
+
+```sh
+go run .\cmd\main.go
+```
+
+## Quick API Walkthrough
+
+Register:
+
+```sh
+curl -X POST http://localhost:8080/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alan","email":"alan@example.com","password":"secure123"}'
+```
+
+Login:
+
+```sh
+curl -X POST http://localhost:8080/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alan@example.com","password":"secure123"}'
+```
+
+Create a budget:
+
+```sh
+curl -X POST http://localhost:8080/budgets \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"category_id":1,"limit":500,"start_date":"2026-03-01T00:00:00Z","end_date":"2026-03-31T23:59:59Z"}'
+```
+
+Create a transaction:
+
+```sh
+curl -X POST http://localhost:8080/transactions \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"type":"expense","amount":42.5,"category_id":1,"date":"2026-03-15T12:00:00Z","note":"Groceries"}'
+```
+
+List data:
+
+```sh
+curl http://localhost:8080/budgets -H "Authorization: Bearer <token>"
+curl http://localhost:8080/transactions -H "Authorization: Bearer <token>"
+```
+
+## Testing
+
+Run the full suite:
+
+```sh
+go test ./...
+```
+
+## Notes
+
+- This project is intentionally scoped as an illustration repository rather than a production-complete finance platform.
+- The current API returns model-shaped JSON for budgets and transactions. That is a reasonable next refinement for a follow-up branch.
+- Budget enforcement currently validates the transaction against the matching budget limit, but not yet against accumulated spending over a period.
 
 ## License
 

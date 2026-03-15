@@ -10,6 +10,8 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgres://user:password@db:5432/personal_finance_db?sslmode=disable
+      - JWT_SECRET=dev-secret-for-docker
+      - PORT=8080
 
   db:
     image: postgres:17
