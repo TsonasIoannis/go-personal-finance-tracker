@@ -2,10 +2,14 @@ package main
 
 import (
 	"log"
+	"os"
+	"time"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/auth"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/controllers"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/handlers"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/middleware"
 	repositories "github.com/TsonasIoannis/go-personal-finance-tracker/internal/repositories/gorm"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/routes"
 	services "github.com/TsonasIoannis/go-personal-finance-tracker/internal/services/default"
@@ -33,6 +37,8 @@ func main() {
 
 	// Create a new Gin router
 	r := gin.Default()
+	tokenManager := auth.NewJWTManager(os.Getenv("JWT_SECRET"), 24*time.Hour)
+	authMiddleware := middleware.AuthMiddleware(tokenManager)
 
 	gormDB := db.GetDB()
 	// Repositories
@@ -46,12 +52,12 @@ func main() {
 	budgetService := services.NewBudgetService(budgetRepo)
 
 	// Controllers
-	userController := controllers.NewUserController(userService)
+	userController := controllers.NewUserController(userService, tokenManager)
 	transactionController := controllers.NewTransactionController(transactionService)
 	budgetController := controllers.NewBudgetController(budgetService)
 
 	// Register API routes
-	routes.SetupRoutes(r, userController, transactionController, budgetController)
+	routes.SetupRoutes(r, authMiddleware, userController, transactionController, budgetController)
 
 	// Register health & readiness routes
 	r.GET("/health", handlers.HealthCheckHandler)
@@ -62,9 +68,14 @@ func main() {
 		c.JSON(200, gin.H{"message": "Welcome to the Personal Finance Tracker API!"})
 	})
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	// Start the server
-	log.Println("Starting server on :8080")
-	if err := r.Run(":8080"); err != nil {
+	log.Printf("Starting server on :%s", port)
+	if err := r.Run(":" + port); err != nil {
 		log.Println("Failed to start server: ", err)
 	}
 }

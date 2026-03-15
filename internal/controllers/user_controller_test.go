@@ -8,11 +8,29 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/auth"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+type MockTokenManager struct {
+	mock.Mock
+}
+
+func (m *MockTokenManager) GenerateToken(user *models.User) (string, error) {
+	args := m.Called(user)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockTokenManager) ParseToken(token string) (*auth.Claims, error) {
+	args := m.Called(token)
+	if args.Get(0) != nil {
+		return args.Get(0).(*auth.Claims), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
 
 // MockUserService implements services.UserService
 type MockUserService struct {
@@ -21,12 +39,18 @@ type MockUserService struct {
 
 func (m *MockUserService) RegisterUser(name, email, password string) (*models.User, error) {
 	args := m.Called(name, email, password)
-	return args.Get(0).(*models.User), args.Error(1)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.User), args.Error(1)
+	}
+	return nil, args.Error(1)
 }
 
 func (m *MockUserService) AuthenticateUser(email, password string) (*models.User, error) {
 	args := m.Called(email, password)
-	return args.Get(0).(*models.User), args.Error(1)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.User), args.Error(1)
+	}
+	return nil, args.Error(1)
 }
 
 func TestRegister(t *testing.T) {
@@ -34,12 +58,13 @@ func TestRegister(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := new(MockUserService)
-		controller := NewUserController(mockService)
+		mockTokenManager := new(MockTokenManager)
+		controller := NewUserController(mockService, mockTokenManager)
 
-		input := models.User{
-			Name:     "Alice",
-			Email:    "alice@example.com",
-			Password: "secure123",
+		input := map[string]string{
+			"name":     "Alice",
+			"email":    "alice@example.com",
+			"password": "secure123",
 		}
 		expected := &models.User{
 			ID:    1,
@@ -47,8 +72,9 @@ func TestRegister(t *testing.T) {
 			Email: "alice@example.com",
 		}
 
-		mockService.On("RegisterUser", input.Name, input.Email, input.Password).
+		mockService.On("RegisterUser", "Alice", "alice@example.com", "secure123").
 			Return(expected, nil).Once()
+		mockTokenManager.On("GenerateToken", expected).Return("token-123", nil).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -61,12 +87,15 @@ func TestRegister(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, w.Code)
 		assert.Contains(t, w.Body.String(), "User registered")
-		assert.Contains(t, w.Body.String(), `"Email":"alice@example.com"`)
+		assert.Contains(t, w.Body.String(), `"email":"alice@example.com"`)
+		assert.Contains(t, w.Body.String(), `"token":"token-123"`)
+		assert.NotContains(t, w.Body.String(), "Password")
 	})
 
 	t.Run("Invalid JSON", func(t *testing.T) {
 		mockService := new(MockUserService)
-		controller := NewUserController(mockService)
+		mockTokenManager := new(MockTokenManager)
+		controller := NewUserController(mockService, mockTokenManager)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -82,15 +111,16 @@ func TestRegister(t *testing.T) {
 
 	t.Run("Service Error", func(t *testing.T) {
 		mockService := new(MockUserService)
-		controller := NewUserController(mockService)
+		mockTokenManager := new(MockTokenManager)
+		controller := NewUserController(mockService, mockTokenManager)
 
-		input := models.User{
-			Name:     "Bob",
-			Email:    "bob@example.com",
-			Password: "pass123",
+		input := map[string]string{
+			"name":     "Bob",
+			"email":    "bob@example.com",
+			"password": "password123",
 		}
 
-		mockService.On("RegisterUser", input.Name, input.Email, input.Password).
+		mockService.On("RegisterUser", "Bob", "bob@example.com", "password123").
 			Return((*models.User)(nil), errors.New("email already registered")).Once()
 
 		w := httptest.NewRecorder()
@@ -112,7 +142,8 @@ func TestLogin(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := new(MockUserService)
-		controller := NewUserController(mockService)
+		mockTokenManager := new(MockTokenManager)
+		controller := NewUserController(mockService, mockTokenManager)
 
 		email := "alice@example.com"
 		password := "secure123"
@@ -120,6 +151,7 @@ func TestLogin(t *testing.T) {
 
 		mockService.On("AuthenticateUser", email, password).
 			Return(expected, nil).Once()
+		mockTokenManager.On("GenerateToken", expected).Return("token-abc", nil).Once()
 
 		payload := map[string]string{
 			"email":    email,
@@ -137,12 +169,15 @@ func TestLogin(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "Login successful")
-		assert.Contains(t, w.Body.String(), `"Email":"alice@example.com"`)
+		assert.Contains(t, w.Body.String(), `"email":"alice@example.com"`)
+		assert.Contains(t, w.Body.String(), `"token":"token-abc"`)
+		assert.NotContains(t, w.Body.String(), "Password")
 	})
 
 	t.Run("Invalid JSON", func(t *testing.T) {
 		mockService := new(MockUserService)
-		controller := NewUserController(mockService)
+		mockTokenManager := new(MockTokenManager)
+		controller := NewUserController(mockService, mockTokenManager)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -158,7 +193,8 @@ func TestLogin(t *testing.T) {
 
 	t.Run("Authentication Failure", func(t *testing.T) {
 		mockService := new(MockUserService)
-		controller := NewUserController(mockService)
+		mockTokenManager := new(MockTokenManager)
+		controller := NewUserController(mockService, mockTokenManager)
 
 		email := "bob@example.com"
 		password := "wrongpass"

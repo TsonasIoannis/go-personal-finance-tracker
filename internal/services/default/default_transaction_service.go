@@ -40,7 +40,16 @@ func (s *DefaultTransactionService) GetTransactionsByUser(userID uint) ([]models
 	return s.transactionRepo.GetTransactionsByUserID(userID)
 }
 
-// DeleteTransaction removes a transaction by ID
-func (s *DefaultTransactionService) DeleteTransaction(transactionID uint) error {
+// DeleteTransactionForUser removes a transaction that belongs to the authenticated user.
+func (s *DefaultTransactionService) DeleteTransactionForUser(userID, transactionID uint) error {
+	transaction, err := s.transactionRepo.GetTransactionByID(transactionID)
+	if err != nil {
+		return errors.New("transaction not found")
+	}
+
+	if transaction.UserID != userID {
+		return errors.New("transaction not found")
+	}
+
 	return s.transactionRepo.DeleteTransaction(transactionID)
 }

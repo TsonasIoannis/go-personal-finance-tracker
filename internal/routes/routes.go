@@ -5,15 +5,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(router *gin.Engine, userController *controllers.UserController, transactionController *controllers.TransactionController, budgetController *controllers.BudgetController) {
+func SetupRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, userController *controllers.UserController, transactionController *controllers.TransactionController, budgetController *controllers.BudgetController) {
 	router.POST("/register", userController.Register)
 	router.POST("/login", userController.Login)
 
-	router.GET("/transactions", transactionController.GetTransactions)
-	router.POST("/transactions", transactionController.CreateTransaction)
-	router.DELETE("/transactions/:id", transactionController.DeleteTransaction)
-
-	router.GET("/budgets", budgetController.GetBudgets)
-	router.POST("/budgets", budgetController.CreateBudget)
-	router.DELETE("/budgets/:id", budgetController.DeleteBudget)
+	protected := router.Group("/")
+	protected.Use(authMiddleware)
+	protected.GET("/transactions", transactionController.GetTransactions)
+	protected.POST("/transactions", transactionController.CreateTransaction)
+	protected.DELETE("/transactions/:id", transactionController.DeleteTransaction)
+	protected.GET("/budgets", budgetController.GetBudgets)
+	protected.POST("/budgets", budgetController.CreateBudget)
+	protected.DELETE("/budgets/:id", budgetController.DeleteBudget)
 }

@@ -1,12 +1,12 @@
 # Stage 1: Build
-FROM golang:1.23 AS builder
+FROM golang:1.25 AS builder
 
 RUN useradd -u 10001 serveruser
 WORKDIR /app
 
 # Copy go.mod and go.sum first for caching dependencies
 COPY go.mod go.sum ./
-RUN go mod tidy
+RUN go mod download
 
 # Copy the source code
 COPY . .
@@ -24,17 +24,13 @@ WORKDIR /home/appuser
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /app/personal-finance-tracker .
 
-# Set environment variables (optional)
+# Runtime configuration
 ENV PORT=8080
 
 # Expose application port
 EXPOSE 8080
 
 USER serveruser
-
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD ["./personal-finance-tracker", "health"]
 
 # Run the application
 CMD ["./personal-finance-tracker"]

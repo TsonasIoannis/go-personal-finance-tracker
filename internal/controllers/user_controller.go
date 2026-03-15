@@ -3,43 +3,69 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/auth"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/services"
 	"github.com/gin-gonic/gin"
 )
 
 type UserController struct {
-	userService services.UserService
+	userService  services.UserService
+	tokenManager auth.TokenManager
 }
 
-func NewUserController(userService services.UserService) *UserController {
-	return &UserController{userService: userService}
+type registerRequest struct {
+	Name     string `json:"name" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
+}
+
+type loginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+type userResponse struct {
+	ID    uint   `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+func NewUserController(userService services.UserService, tokenManager auth.TokenManager) *UserController {
+	return &UserController{userService: userService, tokenManager: tokenManager}
 }
 
 // Register handles user registration
 func (uc *UserController) Register(c *gin.Context) {
-	var user models.User
+	var req registerRequest
 
-	if err := c.ShouldBindJSON(&user); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
-	createdUser, err := uc.userService.RegisterUser(user.Name, user.Email, user.Password)
+	createdUser, err := uc.userService.RegisterUser(req.Name, req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered", "user": createdUser})
+	token, err := uc.tokenManager.GenerateToken(createdUser)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "User registered",
+		"token":   token,
+		"user":    newUserResponse(createdUser),
+	})
 }
 
 // Login handles user authentication
 func (uc *UserController) Login(c *gin.Context) {
-	var req struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	var req loginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
@@ -52,5 +78,23 @@ func (uc *UserController) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Login successful", "user": user})
+	token, err := uc.tokenManager.GenerateToken(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"token":   token,
+		"user":    newUserResponse(user),
+	})
+}
+
+func newUserResponse(user *models.User) userResponse {
+	return userResponse{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+	}
 }

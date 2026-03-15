@@ -8,5 +8,5 @@ type BudgetService interface {
 	CreateBudget(budget *models.Budget) error
 	UpdateBudget(budget *models.Budget) error
 	GetBudgetsByUser(userID uint) ([]models.Budget, error)
-	DeleteBudget(budgetID uint) error
+	DeleteBudgetForUser(userID, budgetID uint) error
 }
