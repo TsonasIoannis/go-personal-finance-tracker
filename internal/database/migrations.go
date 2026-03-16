@@ -241,12 +241,12 @@ func executeStatements(db *gorm.DB, statements []string, err error) error {
 }
 
 func statementsForDialect(db *gorm.DB, postgresStatements, sqliteStatements []string) ([]string, error) {
-	switch db.Dialector.Name() {
+	switch db.Name() {
 	case "postgres":
 		return postgresStatements, nil
 	case "sqlite":
 		return sqliteStatements, nil
 	default:
-		return nil, fmt.Errorf("unsupported dialect %q", db.Dialector.Name())
+		return nil, fmt.Errorf("unsupported dialect %q", db.Name())
 	}
 }
