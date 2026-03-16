@@ -70,7 +70,7 @@ func (tc *TransactionController) GetTransactions(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, transactions)
+	c.JSON(http.StatusOK, newTransactionResponses(transactions))
 }
 
 // DeleteTransaction removes a transaction

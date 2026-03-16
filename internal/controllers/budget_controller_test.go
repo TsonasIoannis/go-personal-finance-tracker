@@ -177,8 +177,10 @@ func TestGetBudgets(t *testing.T) {
 		controller.GetBudgets(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), `"Limit":1000`)
-		assert.Contains(t, w.Body.String(), `"Limit":500`)
+		assert.Contains(t, w.Body.String(), `"limit":1000`)
+		assert.Contains(t, w.Body.String(), `"limit":500`)
+		assert.Contains(t, w.Body.String(), `"user_id":1`)
+		assert.NotContains(t, w.Body.String(), `"UserID"`)
 	})
 
 	t.Run("Service Error", func(t *testing.T) {
