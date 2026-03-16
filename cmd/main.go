@@ -1,21 +1,19 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
-	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/auth"
-	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/controllers"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/app"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/config"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
-	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/handlers"
-	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/middleware"
-	repositories "github.com/TsonasIoannis/go-personal-finance-tracker/internal/repositories/gorm"
-	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/routes"
-	services "github.com/TsonasIoannis/go-personal-finance-tracker/internal/services/default"
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -28,67 +26,59 @@ func main() {
 		return
 	}
 
-	// Initialize a new PostgresDatabase instance
-	db := database.NewPostgresDatabase()
+	if err := run(); err != nil {
+		log.Printf("Application failed: %v", err)
+		os.Exit(1)
+	}
+}
 
-	// Connect to the database
+func run() error {
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("configuration initialization failed: %w", err)
+	}
+
+	db := database.NewPostgresDatabase(cfg.DatabaseURL)
 	if err := db.Connect(); err != nil {
-		log.Fatalf("Database initialization failed: %v", err)
+		return fmt.Errorf("database initialization failed: %w", err)
 	}
+	defer closeDatabase(db)
 
-	// Ensure database is closed when the program exits
-	defer db.Close()
-
-	// Check database connection health
 	if err := db.CheckConnection(); err != nil {
-		log.Println("Database is unavailable:", err)
-	} else {
-		log.Println("Database is healthy!")
+		return fmt.Errorf("database health check failed: %w", err)
 	}
 
-	// Create a new Gin router
-	r := gin.Default()
-	tokenManager := auth.NewJWTManager(os.Getenv("JWT_SECRET"), 24*time.Hour)
-	authMiddleware := middleware.AuthMiddleware(tokenManager)
+	log.Println("Database is healthy.")
 
-	gormDB := db.GetDB()
-	// Repositories
-	userRepo := repositories.NewUserRepository(gormDB)
-	transactionRepo := repositories.NewTransactionRepository(gormDB)
-	budgetRepo := repositories.NewGormBudgetRepository(gormDB)
+	server := app.NewHTTPServer(cfg, db)
+	serverErrors := make(chan error, 1)
 
-	// Services
-	userService := services.NewUserService(userRepo)
-	transactionService := services.NewTransactionService(transactionRepo, budgetRepo)
-	budgetService := services.NewBudgetService(budgetRepo)
+	go func() {
+		log.Printf("Starting server on %s", cfg.Address())
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErrors <- err
+		}
+	}()
 
-	// Controllers
-	userController := controllers.NewUserController(userService, tokenManager)
-	transactionController := controllers.NewTransactionController(transactionService)
-	budgetController := controllers.NewBudgetController(budgetService)
+	shutdownContext, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	// Register API routes
-	routes.SetupRoutes(r, authMiddleware, userController, transactionController, budgetController)
-
-	// Register health & readiness routes
-	r.GET("/health", handlers.HealthCheckHandler)
-	r.GET("/ready", handlers.ReadinessCheckHandler(db))
-
-	// Default route
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "Welcome to the Personal Finance Tracker API!"})
-	})
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	select {
+	case err := <-serverErrors:
+		return fmt.Errorf("server failed: %w", err)
+	case <-shutdownContext.Done():
+		log.Println("Shutdown signal received.")
 	}
 
-	// Start the server
-	log.Printf("Starting server on :%s", port)
-	if err := r.Run(":" + port); err != nil {
-		log.Println("Failed to start server: ", err)
+	gracefulShutdownContext, cancel := context.WithTimeout(context.Background(), cfg.HTTP.ShutdownTimeout)
+	defer cancel()
+
+	if err := server.Shutdown(gracefulShutdownContext); err != nil {
+		log.Printf("Graceful shutdown failed: %v", err)
 	}
+
+	log.Println("Server shutdown complete.")
+	return nil
 }
 
 func runHealthcheck() error {
@@ -109,4 +99,10 @@ func runHealthcheck() error {
 	}
 
 	return nil
+}
+
+func closeDatabase(db database.Database) {
+	if err := db.Close(); err != nil {
+		log.Printf("Database close failed: %v", err)
+	}
 }

@@ -3,7 +3,6 @@ package database
 import (
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
@@ -14,23 +13,23 @@ import (
 
 // PostgresDatabase implements the Database interface
 type PostgresDatabase struct {
-	db *gorm.DB
+	db            *gorm.DB
+	connectionURL string
 }
 
 // NewPostgresDatabase initializes a new Postgres database instance
-func NewPostgresDatabase() *PostgresDatabase {
-	return &PostgresDatabase{}
+func NewPostgresDatabase(connectionURL string) *PostgresDatabase {
+	return &PostgresDatabase{connectionURL: connectionURL}
 }
 
 // Connect initializes the DB connection using GORM
 func (p *PostgresDatabase) Connect() error {
-	connStr := os.Getenv("DATABASE_URL")
-	if connStr == "" {
-		return fmt.Errorf("DATABASE_URL environment variable is not set")
+	if p.connectionURL == "" {
+		return fmt.Errorf("database connection URL is not configured")
 	}
 
 	var err error
-	p.db, err = gorm.Open(postgres.Open(connStr), &gorm.Config{
+	p.db, err = gorm.Open(postgres.Open(p.connectionURL), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info), // Enable SQL logging
 	})
 	if err != nil {
