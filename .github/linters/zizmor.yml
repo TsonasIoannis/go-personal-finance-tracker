@@ -1,7 +1,5 @@
 rules:
   unpinned-uses:
-    ignore:
-      - bump.yml
-      - go.yml
-      - linter.yml
-      - packages.yml
+    config:
+      policies:
+        "*": ref-pin
