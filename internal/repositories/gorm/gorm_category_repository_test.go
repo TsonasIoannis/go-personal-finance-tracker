@@ -12,7 +12,8 @@ import (
 func setupCategoryTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db := openSQLiteTestDB(t)
-	_ = db.AutoMigrate(&models.Category{})
+	err := db.AutoMigrate(&models.Category{})
+	assert.NoError(t, err)
 	return db
 }
 

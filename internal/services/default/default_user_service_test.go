@@ -84,7 +84,8 @@ func TestAuthenticateUser(t *testing.T) {
 	service := NewUserService(mockRepo)
 
 	t.Run("Authenticate valid user", func(t *testing.T) {
-		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("mypassword"), bcrypt.DefaultCost)
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte("mypassword"), bcrypt.DefaultCost)
+		assert.NoError(t, err)
 		user := &models.User{Name: "John Doe", Email: "john@example.com", Password: string(hashedPassword)}
 
 		mockRepo.On("GetUserByEmail", "john@example.com").Return(user, nil)
@@ -106,7 +107,8 @@ func TestAuthenticateUser(t *testing.T) {
 		mockRepo.AssertExpectations(t)
 	})
 	t.Run("Fail when password is incorrect", func(t *testing.T) {
-		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("correctpassword"), bcrypt.DefaultCost)
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte("correctpassword"), bcrypt.DefaultCost)
+		assert.NoError(t, err)
 		user := &models.User{Name: "John Doe", Email: "john@example.com", Password: string(hashedPassword)}
 
 		mockRepo.On("GetUserByEmail", "john@example.com").Return(user, nil)
