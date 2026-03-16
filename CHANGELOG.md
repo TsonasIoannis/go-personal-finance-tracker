@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+# [1.10.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.9.0...v1.10.0) (2026-03-16)
+
+
+### Features
+
+* centralise error handling ([9c4ab6b](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/9c4ab6b1b4755c5f32f7578c8eb549ab3e0af77c))
+
 # [1.9.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.8.0...v1.9.0) (2026-03-16)
 
 
