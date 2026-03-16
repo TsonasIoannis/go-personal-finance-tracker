@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -47,9 +46,7 @@ func (p *PostgresDatabase) Connect() error {
 	sqlDB.SetConnMaxLifetime(5 * time.Minute)
 
 	log.Println("Database connection established.")
-
-	// Run Migrations
-	return p.runMigrations()
+	return nil
 }
 
 // GetDB returns the database instance
@@ -91,17 +88,16 @@ func (p *PostgresDatabase) Close() error {
 	return sqlDB.Close()
 }
 
-// runMigrations applies database schema changes
-func (p *PostgresDatabase) runMigrations() error {
-	err := p.db.AutoMigrate(
-		&models.User{},
-		&models.Transaction{},
-		&models.Category{},
-		&models.Budget{},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to run migrations: %v", err)
+// Migrate applies the configured schema migrations.
+func (p *PostgresDatabase) Migrate() error {
+	if p.db == nil {
+		return fmt.Errorf("database connection is not initialized")
 	}
+
+	if err := ApplyMigrations(p.db); err != nil {
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
 	log.Println("Database migrations applied successfully.")
 	return nil
 }

@@ -9,21 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gorm.io/gorm"
 )
 
 // MockDatabase is a mock implementation of the database.Database interface.
 type MockDatabase struct {
 	mock.Mock
-	MockDB *gorm.DB
 }
 
 func (m *MockDatabase) Connect() error {
 	args := m.Called()
-	if m.MockDB == nil {
-		m.MockDB = &gorm.DB{}
-	}
-
 	return args.Error(0)
 }
 
@@ -32,13 +26,9 @@ func (m *MockDatabase) CheckConnection() error {
 	return args.Error(0)
 }
 
-func (m *MockDatabase) GetDB() *gorm.DB {
+func (m *MockDatabase) Migrate() error {
 	args := m.Called()
-	if db, ok := args.Get(0).(*gorm.DB); ok {
-		return db
-	}
-
-	return nil
+	return args.Error(0)
 }
 
 func (m *MockDatabase) Close() error {
@@ -51,11 +41,8 @@ func TestReadinessCheckHandler(t *testing.T) {
 
 	t.Run("should return 200 OK when DB is available", func(t *testing.T) {
 		mockDB := new(MockDatabase)
-		mockGormDB := &gorm.DB{}
-		mockDB.MockDB = mockGormDB
 
 		mockDB.On("CheckConnection").Return(nil)
-		mockDB.On("GetDB").Return(mockGormDB)
 
 		router := gin.New()
 		router.GET("/readiness", ReadinessCheckHandler(mockDB))
@@ -74,11 +61,8 @@ func TestReadinessCheckHandler(t *testing.T) {
 
 	t.Run("should return 503 Service Unavailable when DB is down", func(t *testing.T) {
 		mockDB := new(MockDatabase)
-		mockGormDB := &gorm.DB{}
-		mockDB.MockDB = mockGormDB
 
 		mockDB.On("CheckConnection").Return(errors.New("database not reachable"))
-		mockDB.On("GetDB").Return(mockGormDB)
 
 		router := gin.New()
 		router.GET("/readiness", ReadinessCheckHandler(mockDB))
@@ -98,7 +82,7 @@ func TestReadinessCheckHandler(t *testing.T) {
 	t.Run("should return 503 when DB is not initialized", func(t *testing.T) {
 		mockDB := new(MockDatabase)
 
-		mockDB.On("GetDB").Return(nil)
+		mockDB.On("CheckConnection").Return(errors.New("database connection is not initialized"))
 
 		router := gin.New()
 		router.GET("/readiness", ReadinessCheckHandler(mockDB))

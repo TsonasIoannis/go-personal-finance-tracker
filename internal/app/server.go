@@ -9,14 +9,14 @@ import (
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/handlers"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/middleware"
-	repositories "github.com/TsonasIoannis/go-personal-finance-tracker/internal/repositories/gorm"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/persistence"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/routes"
 	services "github.com/TsonasIoannis/go-personal-finance-tracker/internal/services/default"
 	"github.com/gin-gonic/gin"
 )
 
-func NewHTTPServer(cfg config.Config, db database.Database) *http.Server {
-	router := newRouter(cfg, db)
+func NewHTTPServer(cfg config.Config, db database.Database, repositories persistence.Repositories) *http.Server {
+	router := newRouter(cfg, db, repositories)
 
 	return &http.Server{
 		Addr:              cfg.Address(),
@@ -28,22 +28,16 @@ func NewHTTPServer(cfg config.Config, db database.Database) *http.Server {
 	}
 }
 
-func newRouter(cfg config.Config, db database.Database) *gin.Engine {
+func newRouter(cfg config.Config, db database.Database, repositories persistence.Repositories) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
 
 	tokenManager := auth.NewJWTManager(cfg.JWTSecret, cfg.Auth.TokenTTL)
 	authMiddleware := middleware.AuthMiddleware(tokenManager)
 
-	gormDB := db.GetDB()
-
-	userRepo := repositories.NewUserRepository(gormDB)
-	transactionRepo := repositories.NewTransactionRepository(gormDB)
-	budgetRepo := repositories.NewGormBudgetRepository(gormDB)
-
-	userService := services.NewUserService(userRepo)
-	transactionService := services.NewTransactionService(transactionRepo, budgetRepo)
-	budgetService := services.NewBudgetService(budgetRepo)
+	userService := services.NewUserService(repositories.Users)
+	transactionService := services.NewTransactionService(repositories.Transactions, repositories.Budgets)
+	budgetService := services.NewBudgetService(repositories.Budgets)
 
 	userController := controllers.NewUserController(userService, tokenManager)
 	transactionController := controllers.NewTransactionController(transactionService)

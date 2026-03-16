@@ -3,6 +3,7 @@ package repositories
 import (
 	"testing"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
@@ -12,7 +13,7 @@ import (
 func setupCategoryTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db := openSQLiteTestDB(t)
-	err := db.AutoMigrate(&models.Category{})
+	err := database.ApplyMigrations(db)
 	assert.NoError(t, err)
 	return db
 }

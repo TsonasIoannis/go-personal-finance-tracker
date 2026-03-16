@@ -23,6 +23,7 @@ It demonstrates:
 - service-layer validation
 - validated environment-based configuration
 - explicit HTTP server timeouts and graceful shutdown
+- versioned startup migrations with a separate persistence bootstrap
 - readiness and health endpoints
 - Docker-based and native local startup
 - a passing `go test ./...` suite

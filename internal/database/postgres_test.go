@@ -3,7 +3,6 @@ package database
 import (
 	"testing"
 
-	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
@@ -69,6 +68,41 @@ func TestCheckConnection(t *testing.T) {
 	})
 }
 
+func TestMigrate(t *testing.T) {
+	t.Run("should fail if db is nil", func(t *testing.T) {
+		pgDB := NewPostgresDatabase("postgres://example")
+
+		err := pgDB.Migrate()
+		assert.Error(t, err)
+		assert.Equal(t, "database connection is not initialized", err.Error())
+	})
+
+	t.Run("should successfully apply migrations", func(t *testing.T) {
+		mockDB := openSQLiteTestDB(t)
+		pgDB := &PostgresDatabase{db: mockDB}
+
+		err := pgDB.Migrate()
+		assert.NoError(t, err)
+
+		assert.True(t, pgDB.db.Migrator().HasTable("users"), "users table should exist")
+		assert.True(t, pgDB.db.Migrator().HasTable("transactions"), "transactions table should exist")
+		assert.True(t, pgDB.db.Migrator().HasTable("categories"), "categories table should exist")
+		assert.True(t, pgDB.db.Migrator().HasTable("budgets"), "budgets table should exist")
+		assert.True(t, pgDB.db.Migrator().HasTable("schema_migrations"), "schema_migrations table should exist")
+	})
+
+	t.Run("should be idempotent", func(t *testing.T) {
+		mockDB := openSQLiteTestDB(t)
+		pgDB := &PostgresDatabase{db: mockDB}
+
+		err := pgDB.Migrate()
+		assert.NoError(t, err)
+
+		err = pgDB.Migrate()
+		assert.NoError(t, err)
+	})
+}
+
 func TestGetDB(t *testing.T) {
 	t.Run("should return the correct DB instance", func(t *testing.T) {
 		mockDB := MockGormDB(t)
@@ -93,20 +127,5 @@ func TestClose(t *testing.T) {
 
 		err := pgDB.Close()
 		assert.NoError(t, err)
-	})
-}
-
-func TestRunMigrations(t *testing.T) {
-	t.Run("should successfully apply migrations", func(t *testing.T) {
-		mockDB := openSQLiteTestDB(t)
-		pgDB := &PostgresDatabase{db: mockDB}
-
-		err := pgDB.runMigrations()
-		assert.NoError(t, err)
-
-		assert.True(t, pgDB.db.Migrator().HasTable(&models.User{}), "User table should exist")
-		assert.True(t, pgDB.db.Migrator().HasTable(&models.Transaction{}), "Transaction table should exist")
-		assert.True(t, pgDB.db.Migrator().HasTable(&models.Category{}), "Category table should exist")
-		assert.True(t, pgDB.db.Migrator().HasTable(&models.Budget{}), "Budget table should exist")
 	})
 }
