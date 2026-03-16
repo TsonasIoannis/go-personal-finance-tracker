@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -17,6 +19,15 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		if err := runHealthcheck(); err != nil {
+			log.Printf("Healthcheck failed: %v", err)
+			os.Exit(1)
+		}
+
+		return
+	}
+
 	// Initialize a new PostgresDatabase instance
 	db := database.NewPostgresDatabase()
 
@@ -78,4 +89,24 @@ func main() {
 	if err := r.Run(":" + port); err != nil {
 		log.Println("Failed to start server: ", err)
 	}
+}
+
+func runHealthcheck() error {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	client := &http.Client{Timeout: 2 * time.Second}
+	resp, err := client.Get("http://127.0.0.1:" + port + "/health")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
 }

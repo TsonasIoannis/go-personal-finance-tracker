@@ -30,6 +30,8 @@ ENV PORT=8080
 # Expose application port
 EXPOSE 8080
 
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 CMD ["/home/appuser/personal-finance-tracker", "healthcheck"]
+
 USER serveruser
 
 # Run the application
