@@ -68,7 +68,7 @@ func (bc *BudgetController) GetBudgets(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, budgets)
+	c.JSON(http.StatusOK, newBudgetResponses(budgets))
 }
 
 // DeleteBudget removes a budget

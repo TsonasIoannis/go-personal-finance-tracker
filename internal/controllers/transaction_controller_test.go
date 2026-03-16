@@ -144,8 +144,10 @@ func TestGetTransactions(t *testing.T) {
 		controller.GetTransactions(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), `"Amount":20`)
-		assert.Contains(t, w.Body.String(), `"Amount":100`)
+		assert.Contains(t, w.Body.String(), `"amount":20`)
+		assert.Contains(t, w.Body.String(), `"amount":100`)
+		assert.Contains(t, w.Body.String(), `"user_id":1`)
+		assert.NotContains(t, w.Body.String(), `"UserID"`)
 	})
 
 	t.Run("Service Error", func(t *testing.T) {
