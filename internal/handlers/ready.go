@@ -10,12 +10,17 @@ import (
 // ReadinessCheckHandler checks if the service is ready (i.e., DB is available)
 func ReadinessCheckHandler(db database.Database) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if db == nil || db.GetDB() == nil {
+		if db == nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unavailable", "error": "database is not initialized"})
 			return
 		}
 
 		if err := db.CheckConnection(); err != nil {
+			if err.Error() == "database connection is not initialized" {
+				c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unavailable", "error": "database is not initialized"})
+				return
+			}
+
 			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unavailable", "error": err.Error()})
 			return
 		}

@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
@@ -13,7 +14,7 @@ import (
 func setupTransactionTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db := openSQLiteTestDB(t)
-	err := db.AutoMigrate(&models.User{}, &models.Transaction{})
+	err := database.ApplyMigrations(db)
 	assert.NoError(t, err)
 	return db
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/app"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/config"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/persistence"
 )
 
 func main() {
@@ -44,13 +45,18 @@ func run() error {
 	}
 	defer closeDatabase(db)
 
+	if err := db.Migrate(); err != nil {
+		return fmt.Errorf("database migration failed: %w", err)
+	}
+
 	if err := db.CheckConnection(); err != nil {
 		return fmt.Errorf("database health check failed: %w", err)
 	}
 
 	log.Println("Database is healthy.")
 
-	server := app.NewHTTPServer(cfg, db)
+	repositories := persistence.NewGormRepositories(db.GetDB())
+	server := app.NewHTTPServer(cfg, db, repositories)
 	serverErrors := make(chan error, 1)
 
 	go func() {
