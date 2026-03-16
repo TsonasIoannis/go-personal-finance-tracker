@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+# [1.7.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.6.0...v1.7.0) (2026-03-16)
+
+
+### Features
+
+* separate response dtos ([118468a](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/118468af895aaac2d516cbde8e53fff06bb22ce8))
+
 # [1.6.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.5.0...v1.6.0) (2026-03-15)
 
 
