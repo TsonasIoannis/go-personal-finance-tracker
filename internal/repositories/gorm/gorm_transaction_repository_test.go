@@ -13,7 +13,8 @@ import (
 func setupTransactionTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db := openSQLiteTestDB(t)
-	_ = db.AutoMigrate(&models.User{}, &models.Transaction{})
+	err := db.AutoMigrate(&models.User{}, &models.Transaction{})
+	assert.NoError(t, err)
 	return db
 }
 
@@ -102,7 +103,8 @@ func TestTransactionRepository(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Verify update
-		updatedTransaction, _ := repo.GetTransactionByID(transaction.ID)
+		updatedTransaction, err := repo.GetTransactionByID(transaction.ID)
+		assert.NoError(t, err)
 		assert.Equal(t, 600.00, updatedTransaction.Amount)
 		assert.Equal(t, "Updated transaction", updatedTransaction.Note)
 	})

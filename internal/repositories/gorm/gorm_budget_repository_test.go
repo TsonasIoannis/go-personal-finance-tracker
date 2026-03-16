@@ -13,11 +13,12 @@ import (
 func setupBudgetTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db := openSQLiteTestDB(t)
-	_ = db.AutoMigrate(
+	err := db.AutoMigrate(
 		&models.Budget{},
 		&models.User{},
 		&models.Transaction{},
 	)
+	assert.NoError(t, err)
 	return db
 }
 

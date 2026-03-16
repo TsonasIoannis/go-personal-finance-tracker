@@ -68,7 +68,8 @@ func TestCreateBudget(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		c.Set("userID", uint(1))
 
-		jsonBody, _ := json.Marshal(budgetPayload)
+		jsonBody, err := json.Marshal(budgetPayload)
+		assert.NoError(t, err)
 		c.Request = httptest.NewRequest(http.MethodPost, "/budgets", bytes.NewBuffer(jsonBody))
 		c.Request.Header.Set("Content-Type", "application/json")
 
@@ -96,7 +97,8 @@ func TestCreateBudget(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		c.Set("userID", uint(1))
 
-		jsonBody, _ := json.Marshal(budgetPayload)
+		jsonBody, err := json.Marshal(budgetPayload)
+		assert.NoError(t, err)
 		c.Request = httptest.NewRequest(http.MethodPost, "/budgets", bytes.NewBuffer(jsonBody))
 		c.Request.Header.Set("Content-Type", "application/json")
 
@@ -125,7 +127,8 @@ func TestCreateBudget(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		c.Set("userID", uint(1))
 
-		jsonBody, _ := json.Marshal(budgetPayload)
+		jsonBody, err := json.Marshal(budgetPayload)
+		assert.NoError(t, err)
 		c.Request = httptest.NewRequest(http.MethodPost, "/budgets", bytes.NewBuffer(jsonBody))
 		c.Request.Header.Set("Content-Type", "application/json")
 

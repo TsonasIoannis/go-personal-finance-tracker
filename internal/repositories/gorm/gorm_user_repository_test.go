@@ -11,7 +11,8 @@ import (
 func setupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db := openSQLiteTestDB(t)
-	_ = db.AutoMigrate(&models.User{})
+	err := db.AutoMigrate(&models.User{})
+	assert.NoError(t, err)
 	return db
 }
 
