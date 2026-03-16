@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+# [1.9.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.8.0...v1.9.0) (2026-03-16)
+
+
+### Features
+
+* switch to versioned migrations ([fe02aff](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/fe02afff192d7a973230e1f2fb81f700fb74cef4))
+
 # [1.8.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.7.0...v1.8.0) (2026-03-16)
 
 
