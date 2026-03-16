@@ -3,7 +3,9 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/auth"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/httpapi"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/services"
 	"github.com/gin-gonic/gin"
@@ -40,19 +42,19 @@ func (uc *UserController) Register(c *gin.Context) {
 	var req registerRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		httpapi.WriteError(c, apperrors.Validation("invalid_request", "invalid request payload"))
 		return
 	}
 
 	createdUser, err := uc.userService.RegisterUser(req.Name, req.Email, req.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		httpapi.WriteError(c, err)
 		return
 	}
 
 	token, err := uc.tokenManager.GenerateToken(createdUser)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		httpapi.WriteError(c, apperrors.Internal("token_generation_failed", "failed to generate token", err))
 		return
 	}
 
@@ -68,19 +70,19 @@ func (uc *UserController) Login(c *gin.Context) {
 	var req loginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		httpapi.WriteError(c, apperrors.Validation("invalid_request", "invalid request payload"))
 		return
 	}
 
 	user, err := uc.userService.AuthenticateUser(req.Email, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		httpapi.WriteError(c, err)
 		return
 	}
 
 	token, err := uc.tokenManager.GenerateToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		httpapi.WriteError(c, apperrors.Internal("token_generation_failed", "failed to generate token", err))
 		return
 	}
 

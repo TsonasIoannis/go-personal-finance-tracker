@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -89,6 +90,7 @@ func TestAddTransaction(t *testing.T) {
 		err := service.AddTransaction(transaction)
 		assert.Error(t, err)
 		assert.Equal(t, "transaction exceeds budget limit", err.Error())
+		assert.True(t, isAppErrorKind(err, apperrors.KindValidation))
 		mockTransactionRepo.AssertNotCalled(t, "CreateTransaction")
 	})
 	t.Run("Fail when budget retrieval fails", func(t *testing.T) {
@@ -110,7 +112,8 @@ func TestAddTransaction(t *testing.T) {
 
 		// Ensure the error is returned
 		assert.Error(t, err)
-		assert.Equal(t, "database error", err.Error())
+		assert.Equal(t, "failed to validate transaction budget", err.Error())
+		assert.True(t, isAppErrorKind(err, apperrors.KindInternal))
 
 		// Ensure transaction was NOT created
 		mockTransactionRepo.AssertNotCalled(t, "CreateTransaction")
@@ -156,6 +159,7 @@ func TestDeleteTransaction(t *testing.T) {
 		err := service.DeleteTransactionForUser(1, 9999)
 		assert.Error(t, err)
 		assert.Equal(t, "transaction not found", err.Error())
+		assert.True(t, isAppErrorKind(err, apperrors.KindNotFound))
 		mockTransactionRepo.AssertExpectations(t)
 	})
 
@@ -165,6 +169,7 @@ func TestDeleteTransaction(t *testing.T) {
 		err := service.DeleteTransactionForUser(1, 2)
 		assert.Error(t, err)
 		assert.Equal(t, "transaction not found", err.Error())
+		assert.True(t, isAppErrorKind(err, apperrors.KindNotFound))
 		mockTransactionRepo.AssertNotCalled(t, "DeleteTransaction", uint(2))
 	})
 }

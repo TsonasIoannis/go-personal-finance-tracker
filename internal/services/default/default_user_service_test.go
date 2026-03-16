@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -56,7 +57,8 @@ func TestRegisterUser(t *testing.T) {
 		// Ensure the error is returned
 		assert.Error(t, err)
 		assert.Nil(t, createdUser)
-		assert.Equal(t, "database error", err.Error())
+		assert.Equal(t, "failed to register user", err.Error())
+		assert.True(t, isAppErrorKind(err, apperrors.KindInternal))
 
 		// Ensure repository was called
 		mockRepo.AssertExpectations(t)
@@ -104,6 +106,7 @@ func TestAuthenticateUser(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, authenticatedUser)
 		assert.Equal(t, "invalid credentials", err.Error())
+		assert.True(t, isAppErrorKind(err, apperrors.KindUnauthorized))
 		mockRepo.AssertExpectations(t)
 	})
 	t.Run("Fail when password is incorrect", func(t *testing.T) {
@@ -117,6 +120,12 @@ func TestAuthenticateUser(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, authenticatedUser)
 		assert.Equal(t, "invalid credentials", err.Error())
+		assert.True(t, isAppErrorKind(err, apperrors.KindUnauthorized))
 		mockRepo.AssertExpectations(t)
 	})
+}
+
+func isAppErrorKind(err error, expected apperrors.Kind) bool {
+	appErr, ok := apperrors.As(err)
+	return ok && appErr.Kind == expected
 }

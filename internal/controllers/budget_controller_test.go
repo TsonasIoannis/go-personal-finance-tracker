@@ -3,12 +3,12 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -91,7 +91,8 @@ func TestCreateBudget(t *testing.T) {
 			"end_date":    now.AddDate(0, 1, 0).Format(time.RFC3339),
 		}
 
-		mockService.On("CreateBudget", mock.AnythingOfType("*models.Budget")).Return(errors.New("budget limit must be greater than zero")).Once()
+		mockService.On("CreateBudget", mock.AnythingOfType("*models.Budget")).
+			Return(apperrors.Validation("invalid_budget_limit", "budget limit must be greater than zero")).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -105,6 +106,7 @@ func TestCreateBudget(t *testing.T) {
 		controller.CreateBudget(c)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), `"code":"invalid_budget_limit"`)
 		assert.Contains(t, w.Body.String(), "budget limit must be greater than zero")
 	})
 
@@ -121,7 +123,8 @@ func TestCreateBudget(t *testing.T) {
 			"end_date":    endDate.Format(time.RFC3339),
 		}
 
-		mockService.On("CreateBudget", mock.AnythingOfType("*models.Budget")).Return(errors.New("start date cannot be after end date")).Once()
+		mockService.On("CreateBudget", mock.AnythingOfType("*models.Budget")).
+			Return(apperrors.Validation("invalid_budget_date_range", "start date cannot be after end date")).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -135,6 +138,7 @@ func TestCreateBudget(t *testing.T) {
 		controller.CreateBudget(c)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), `"code":"invalid_budget_date_range"`)
 		assert.Contains(t, w.Body.String(), "start date cannot be after end date")
 	})
 
@@ -153,7 +157,8 @@ func TestCreateBudget(t *testing.T) {
 		controller.CreateBudget(c)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid request payload")
+		assert.Contains(t, w.Body.String(), `"code":"invalid_request"`)
+		assert.Contains(t, w.Body.String(), "invalid request payload")
 	})
 }
 
@@ -190,7 +195,8 @@ func TestGetBudgets(t *testing.T) {
 		mockService := new(MockBudgetService)
 		controller := NewBudgetController(mockService)
 
-		mockService.On("GetBudgetsByUser", uint(1)).Return([]models.Budget(nil), errors.New("DB error")).Once()
+		mockService.On("GetBudgetsByUser", uint(1)).
+			Return([]models.Budget(nil), apperrors.Internal("budgets_fetch_failed", "failed to retrieve budgets", nil)).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -200,7 +206,8 @@ func TestGetBudgets(t *testing.T) {
 		controller.GetBudgets(c)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Failed to retrieve budgets")
+		assert.Contains(t, w.Body.String(), `"code":"budgets_fetch_failed"`)
+		assert.Contains(t, w.Body.String(), "failed to retrieve budgets")
 	})
 }
 
@@ -238,14 +245,16 @@ func TestDeleteBudget(t *testing.T) {
 		controller.DeleteBudget(c)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid budget id")
+		assert.Contains(t, w.Body.String(), `"code":"invalid_budget_id"`)
+		assert.Contains(t, w.Body.String(), "invalid budget id")
 	})
 
 	t.Run("Budget Not Found", func(t *testing.T) {
 		mockService := new(MockBudgetService)
 		controller := NewBudgetController(mockService)
 
-		mockService.On("DeleteBudgetForUser", uint(1), uint(1)).Return(errors.New("not found")).Once()
+		mockService.On("DeleteBudgetForUser", uint(1), uint(1)).
+			Return(apperrors.NotFound("budget_not_found", "budget not found")).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -256,6 +265,7 @@ func TestDeleteBudget(t *testing.T) {
 		controller.DeleteBudget(c)
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "Budget not found")
+		assert.Contains(t, w.Body.String(), `"code":"budget_not_found"`)
+		assert.Contains(t, w.Body.String(), "budget not found")
 	})
 }

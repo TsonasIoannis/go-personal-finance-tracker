@@ -3,7 +3,9 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/httpapi"
 	"github.com/gin-gonic/gin"
 )
 
@@ -11,17 +13,17 @@ import (
 func ReadinessCheckHandler(db database.Database) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if db == nil {
-			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unavailable", "error": "database is not initialized"})
+			httpapi.WriteError(c, apperrors.Unavailable("database_unavailable", "database is not initialized"))
 			return
 		}
 
 		if err := db.CheckConnection(); err != nil {
 			if err.Error() == "database connection is not initialized" {
-				c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unavailable", "error": "database is not initialized"})
+				httpapi.WriteError(c, apperrors.Unavailable("database_unavailable", "database is not initialized"))
 				return
 			}
 
-			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unavailable", "error": err.Error()})
+			httpapi.WriteError(c, apperrors.Unavailable("database_unavailable", err.Error()))
 			return
 		}
 

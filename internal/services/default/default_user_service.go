@@ -1,8 +1,9 @@
 package services
 
 import (
-	"errors"
+	"strings"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/repositories"
 	"golang.org/x/crypto/bcrypt"
@@ -21,14 +22,18 @@ func (s *DefaultUserService) RegisterUser(name, email, password string) (*models
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, err
+		return nil, apperrors.Internal("user_registration_failed", "failed to register user", err)
 	}
 
 	// Create user
 	user := &models.User{Name: name, Email: email, Password: string(hashedPassword)}
 	err = s.userRepo.CreateUser(user)
 	if err != nil {
-		return nil, err
+		if isUniqueConstraintError(err) {
+			return nil, apperrors.Conflict("email_already_registered", "email already registered")
+		}
+
+		return nil, apperrors.Internal("user_registration_failed", "failed to register user", err)
 	}
 	return user, nil
 }
@@ -37,13 +42,24 @@ func (s *DefaultUserService) RegisterUser(name, email, password string) (*models
 func (s *DefaultUserService) AuthenticateUser(email, password string) (*models.User, error) {
 	user, err := s.userRepo.GetUserByEmail(email)
 	if err != nil {
-		return nil, errors.New("invalid credentials")
+		return nil, apperrors.Unauthorized("invalid_credentials", "invalid credentials")
 	}
 
 	// Compare hashed password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return nil, errors.New("invalid credentials")
+		return nil, apperrors.Unauthorized("invalid_credentials", "invalid credentials")
 	}
 
 	return user, nil
+}
+
+func isUniqueConstraintError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errMessage := strings.ToLower(err.Error())
+	return strings.Contains(errMessage, "duplicate key") ||
+		strings.Contains(errMessage, "unique constraint") ||
+		strings.Contains(errMessage, "unique failed")
 }

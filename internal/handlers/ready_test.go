@@ -74,7 +74,7 @@ func TestReadinessCheckHandler(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusServiceUnavailable, w.Code)
-		assert.JSONEq(t, `{"status": "unavailable", "error": "database not reachable"}`, w.Body.String())
+		assert.JSONEq(t, `{"error": {"code": "database_unavailable", "message": "database not reachable"}}`, w.Body.String())
 
 		mockDB.AssertExpectations(t)
 	})
@@ -94,7 +94,7 @@ func TestReadinessCheckHandler(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusServiceUnavailable, w.Code)
-		assert.JSONEq(t, `{"status": "unavailable", "error": "database is not initialized"}`, w.Body.String())
+		assert.JSONEq(t, `{"error": {"code": "database_unavailable", "message": "database is not initialized"}}`, w.Body.String())
 
 		mockDB.AssertExpectations(t)
 	})
