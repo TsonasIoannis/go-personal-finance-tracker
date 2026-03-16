@@ -64,7 +64,8 @@ func TestCreateTransaction(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		c.Set("userID", uint(1))
 
-		jsonBody, _ := json.Marshal(payload)
+		jsonBody, err := json.Marshal(payload)
+		assert.NoError(t, err)
 		c.Request = httptest.NewRequest(http.MethodPost, "/transactions", bytes.NewBuffer(jsonBody))
 		c.Request.Header.Set("Content-Type", "application/json")
 
@@ -92,7 +93,8 @@ func TestCreateTransaction(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		c.Set("userID", uint(1))
 
-		jsonBody, _ := json.Marshal(payload)
+		jsonBody, err := json.Marshal(payload)
+		assert.NoError(t, err)
 		c.Request = httptest.NewRequest(http.MethodPost, "/transactions", bytes.NewBuffer(jsonBody))
 		c.Request.Header.Set("Content-Type", "application/json")
 

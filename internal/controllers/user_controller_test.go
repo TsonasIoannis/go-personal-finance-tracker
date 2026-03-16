@@ -79,7 +79,8 @@ func TestRegister(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 
-		jsonBody, _ := json.Marshal(input)
+		jsonBody, err := json.Marshal(input)
+		assert.NoError(t, err)
 		c.Request = httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(jsonBody))
 		c.Request.Header.Set("Content-Type", "application/json")
 
@@ -126,7 +127,8 @@ func TestRegister(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 
-		jsonBody, _ := json.Marshal(input)
+		jsonBody, err := json.Marshal(input)
+		assert.NoError(t, err)
 		c.Request = httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(jsonBody))
 		c.Request.Header.Set("Content-Type", "application/json")
 
@@ -157,7 +159,8 @@ func TestLogin(t *testing.T) {
 			"email":    email,
 			"password": password,
 		}
-		jsonBody, _ := json.Marshal(payload)
+		jsonBody, err := json.Marshal(payload)
+		assert.NoError(t, err)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -203,7 +206,8 @@ func TestLogin(t *testing.T) {
 			Return((*models.User)(nil), errors.New("invalid credentials")).Once()
 
 		body := map[string]string{"email": email, "password": password}
-		jsonBody, _ := json.Marshal(body)
+		jsonBody, err := json.Marshal(body)
+		assert.NoError(t, err)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
