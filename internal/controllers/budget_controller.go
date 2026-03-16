@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/httpapi"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/services"
 	"github.com/gin-gonic/gin"
@@ -35,7 +37,7 @@ func (bc *BudgetController) CreateBudget(c *gin.Context) {
 
 	var req createBudgetRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		httpapi.WriteError(c, apperrors.Validation("invalid_request", "invalid request payload"))
 		return
 	}
 
@@ -48,7 +50,7 @@ func (bc *BudgetController) CreateBudget(c *gin.Context) {
 	}
 
 	if err := bc.budgetService.CreateBudget(&budget); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		httpapi.WriteError(c, err)
 		return
 	}
 
@@ -64,7 +66,7 @@ func (bc *BudgetController) GetBudgets(c *gin.Context) {
 
 	budgets, err := bc.budgetService.GetBudgetsByUser(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve budgets"})
+		httpapi.WriteError(c, err)
 		return
 	}
 
@@ -80,12 +82,12 @@ func (bc *BudgetController) DeleteBudget(c *gin.Context) {
 
 	budgetID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid budget id"})
+		httpapi.WriteError(c, apperrors.Validation("invalid_budget_id", "invalid budget id"))
 		return
 	}
 
 	if err := bc.budgetService.DeleteBudgetForUser(userID, uint(budgetID)); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Budget not found"})
+		httpapi.WriteError(c, err)
 		return
 	}
 

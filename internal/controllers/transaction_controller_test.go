@@ -3,12 +3,12 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -87,7 +87,8 @@ func TestCreateTransaction(t *testing.T) {
 			"date":        now.Format(time.RFC3339),
 		}
 
-		mockService.On("AddTransaction", mock.AnythingOfType("*models.Transaction")).Return(errors.New("transaction exceeds budget limit")).Once()
+		mockService.On("AddTransaction", mock.AnythingOfType("*models.Transaction")).
+			Return(apperrors.Validation("budget_limit_exceeded", "transaction exceeds budget limit")).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -101,6 +102,7 @@ func TestCreateTransaction(t *testing.T) {
 		controller.CreateTransaction(c)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), `"code":"budget_limit_exceeded"`)
 		assert.Contains(t, w.Body.String(), "transaction exceeds budget limit")
 	})
 
@@ -119,7 +121,8 @@ func TestCreateTransaction(t *testing.T) {
 		controller.CreateTransaction(c)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid request payload")
+		assert.Contains(t, w.Body.String(), `"code":"invalid_request"`)
+		assert.Contains(t, w.Body.String(), "invalid request payload")
 	})
 }
 
@@ -156,7 +159,8 @@ func TestGetTransactions(t *testing.T) {
 		mockService := new(MockTransactionService)
 		controller := NewTransactionController(mockService)
 
-		mockService.On("GetTransactionsByUser", uint(1)).Return([]models.Transaction(nil), errors.New("fetch failed")).Once()
+		mockService.On("GetTransactionsByUser", uint(1)).
+			Return([]models.Transaction(nil), apperrors.Internal("transactions_fetch_failed", "failed to retrieve transactions", nil)).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -166,7 +170,8 @@ func TestGetTransactions(t *testing.T) {
 		controller.GetTransactions(c)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Failed to retrieve transactions")
+		assert.Contains(t, w.Body.String(), `"code":"transactions_fetch_failed"`)
+		assert.Contains(t, w.Body.String(), "failed to retrieve transactions")
 	})
 }
 
@@ -204,14 +209,16 @@ func TestDeleteTransaction(t *testing.T) {
 		controller.DeleteTransaction(c)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid transaction id")
+		assert.Contains(t, w.Body.String(), `"code":"invalid_transaction_id"`)
+		assert.Contains(t, w.Body.String(), "invalid transaction id")
 	})
 
 	t.Run("Not Found", func(t *testing.T) {
 		mockService := new(MockTransactionService)
 		controller := NewTransactionController(mockService)
 
-		mockService.On("DeleteTransactionForUser", uint(1), uint(1)).Return(errors.New("not found")).Once()
+		mockService.On("DeleteTransactionForUser", uint(1), uint(1)).
+			Return(apperrors.NotFound("transaction_not_found", "transaction not found")).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -222,6 +229,7 @@ func TestDeleteTransaction(t *testing.T) {
 		controller.DeleteTransaction(c)
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "Transaction not found")
+		assert.Contains(t, w.Body.String(), `"code":"transaction_not_found"`)
+		assert.Contains(t, w.Body.String(), "transaction not found")
 	})
 }

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -75,6 +76,7 @@ func TestCreateBudget(t *testing.T) {
 		err := service.CreateBudget(budget)
 		assert.Error(t, err)
 		assert.Equal(t, "budget limit must be greater than zero", err.Error())
+		assert.True(t, isAppErrorKind(err, apperrors.KindValidation))
 		mockRepo.AssertNotCalled(t, "CreateBudget")
 	})
 
@@ -90,6 +92,7 @@ func TestCreateBudget(t *testing.T) {
 		err := service.CreateBudget(budget)
 		assert.Error(t, err)
 		assert.Equal(t, "start date cannot be after end date", err.Error())
+		assert.True(t, isAppErrorKind(err, apperrors.KindValidation))
 		mockRepo.AssertNotCalled(t, "CreateBudget")
 	})
 }
@@ -128,6 +131,7 @@ func TestUpdateBudget(t *testing.T) {
 		err := service.UpdateBudget(budget)
 		assert.Error(t, err)
 		assert.Equal(t, "budget limit must be positive", err.Error())
+		assert.True(t, isAppErrorKind(err, apperrors.KindValidation))
 		mockRepo.AssertNotCalled(t, "UpdateBudget")
 	})
 
@@ -144,6 +148,7 @@ func TestUpdateBudget(t *testing.T) {
 		err := service.UpdateBudget(budget)
 		assert.Error(t, err)
 		assert.Equal(t, "start date cannot be after end date", err.Error())
+		assert.True(t, isAppErrorKind(err, apperrors.KindValidation))
 		mockRepo.AssertNotCalled(t, "UpdateBudget")
 	})
 }
@@ -195,6 +200,7 @@ func TestDeleteBudget(t *testing.T) {
 		err := service.DeleteBudgetForUser(1, 9999)
 		assert.Error(t, err)
 		assert.Equal(t, "budget not found", err.Error())
+		assert.True(t, isAppErrorKind(err, apperrors.KindNotFound))
 		mockRepo.AssertExpectations(t)
 	})
 
@@ -204,6 +210,7 @@ func TestDeleteBudget(t *testing.T) {
 		err := service.DeleteBudgetForUser(1, 2)
 		assert.Error(t, err)
 		assert.Equal(t, "budget not found", err.Error())
+		assert.True(t, isAppErrorKind(err, apperrors.KindNotFound))
 		mockRepo.AssertNotCalled(t, "DeleteBudget", uint(2))
 	})
 }

@@ -3,11 +3,11 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/auth"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/gin-gonic/gin"
@@ -107,7 +107,8 @@ func TestRegister(t *testing.T) {
 		controller.Register(c)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid request payload")
+		assert.Contains(t, w.Body.String(), `"code":"invalid_request"`)
+		assert.Contains(t, w.Body.String(), "invalid request payload")
 	})
 
 	t.Run("Service Error", func(t *testing.T) {
@@ -122,7 +123,7 @@ func TestRegister(t *testing.T) {
 		}
 
 		mockService.On("RegisterUser", "Bob", "bob@example.com", "password123").
-			Return((*models.User)(nil), errors.New("email already registered")).Once()
+			Return((*models.User)(nil), apperrors.Conflict("email_already_registered", "email already registered")).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -134,7 +135,8 @@ func TestRegister(t *testing.T) {
 
 		controller.Register(c)
 
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Equal(t, http.StatusConflict, w.Code)
+		assert.Contains(t, w.Body.String(), `"code":"email_already_registered"`)
 		assert.Contains(t, w.Body.String(), "email already registered")
 	})
 }
@@ -191,7 +193,8 @@ func TestLogin(t *testing.T) {
 		controller.Login(c)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid request payload")
+		assert.Contains(t, w.Body.String(), `"code":"invalid_request"`)
+		assert.Contains(t, w.Body.String(), "invalid request payload")
 	})
 
 	t.Run("Authentication Failure", func(t *testing.T) {
@@ -203,7 +206,7 @@ func TestLogin(t *testing.T) {
 		password := "wrongpass"
 
 		mockService.On("AuthenticateUser", email, password).
-			Return((*models.User)(nil), errors.New("invalid credentials")).Once()
+			Return((*models.User)(nil), apperrors.Unauthorized("invalid_credentials", "invalid credentials")).Once()
 
 		body := map[string]string{"email": email, "password": password}
 		jsonBody, err := json.Marshal(body)
@@ -218,6 +221,7 @@ func TestLogin(t *testing.T) {
 		controller.Login(c)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid credentials")
+		assert.Contains(t, w.Body.String(), `"code":"invalid_credentials"`)
+		assert.Contains(t, w.Body.String(), "invalid credentials")
 	})
 }

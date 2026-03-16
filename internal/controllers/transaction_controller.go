@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/httpapi"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/services"
 	"github.com/gin-gonic/gin"
@@ -35,7 +37,7 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 
 	var req createTransactionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		httpapi.WriteError(c, apperrors.Validation("invalid_request", "invalid request payload"))
 		return
 	}
 
@@ -50,7 +52,7 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 
 	err := tc.transactionService.AddTransaction(&transaction)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		httpapi.WriteError(c, err)
 		return
 	}
 
@@ -66,7 +68,7 @@ func (tc *TransactionController) GetTransactions(c *gin.Context) {
 
 	transactions, err := tc.transactionService.GetTransactionsByUser(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve transactions"})
+		httpapi.WriteError(c, err)
 		return
 	}
 
@@ -82,13 +84,13 @@ func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
 
 	transactionID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transaction id"})
+		httpapi.WriteError(c, apperrors.Validation("invalid_transaction_id", "invalid transaction id"))
 		return
 	}
 
 	err = tc.transactionService.DeleteTransactionForUser(userID, uint(transactionID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
+		httpapi.WriteError(c, err)
 		return
 	}
 

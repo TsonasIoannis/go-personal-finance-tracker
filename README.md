@@ -197,6 +197,27 @@ Run the full suite:
 go test ./...
 ```
 
+## Error Responses
+
+The API uses typed application errors in the service layer and a centralized HTTP error responder in the transport layer.
+
+- services return typed errors such as validation, unauthorized, not found, conflict, and internal
+- controllers and middleware delegate error serialization to a shared responder instead of building ad hoc JSON bodies
+- error payloads follow a consistent envelope so clients can rely on stable machine-readable codes
+
+Example:
+
+```json
+{
+  "error": {
+    "code": "invalid_budget_limit",
+    "message": "budget limit must be greater than zero"
+  }
+}
+```
+
+Successful responses are still resource-specific for now, while error responses are standardized across the API surface.
+
 ## Notes
 
 - This project is intentionally scoped as an illustration repository rather than a production-complete finance platform.

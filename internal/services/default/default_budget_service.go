@@ -1,8 +1,7 @@
 package services
 
 import (
-	"errors"
-
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/repositories"
 )
@@ -18,44 +17,61 @@ func NewBudgetService(budgetRepo repositories.BudgetRepository) *DefaultBudgetSe
 // CreateBudget validates and adds a budget
 func (s *DefaultBudgetService) CreateBudget(budget *models.Budget) error {
 	if budget.Limit <= 0 {
-		return errors.New("budget limit must be greater than zero")
+		return apperrors.Validation("invalid_budget_limit", "budget limit must be greater than zero")
 	}
 
 	if budget.StartDate.After(budget.EndDate) {
-		return errors.New("start date cannot be after end date")
+		return apperrors.Validation("invalid_budget_date_range", "start date cannot be after end date")
 	}
 
-	return s.budgetRepo.CreateBudget(budget)
+	if err := s.budgetRepo.CreateBudget(budget); err != nil {
+		return apperrors.Internal("budget_create_failed", "failed to create budget", err)
+	}
+
+	return nil
 }
 
 // UpdateBudget modifies an existing budget
 func (s *DefaultBudgetService) UpdateBudget(budget *models.Budget) error {
 	if budget.Limit <= 0 {
-		return errors.New("budget limit must be positive")
+		return apperrors.Validation("invalid_budget_limit", "budget limit must be positive")
 	}
 
 	if budget.StartDate.After(budget.EndDate) {
-		return errors.New("start date cannot be after end date")
+		return apperrors.Validation("invalid_budget_date_range", "start date cannot be after end date")
 	}
 
-	return s.budgetRepo.UpdateBudget(budget)
+	if err := s.budgetRepo.UpdateBudget(budget); err != nil {
+		return apperrors.Internal("budget_update_failed", "failed to update budget", err)
+	}
+
+	return nil
 }
 
 // GetBudgetsByUser retrieves budgets for a user
 func (s *DefaultBudgetService) GetBudgetsByUser(userID uint) ([]models.Budget, error) {
-	return s.budgetRepo.GetBudgetsByUserID(userID)
+	budgets, err := s.budgetRepo.GetBudgetsByUserID(userID)
+	if err != nil {
+		return nil, apperrors.Internal("budgets_fetch_failed", "failed to retrieve budgets", err)
+	}
+
+	return budgets, nil
 }
 
 // DeleteBudgetForUser removes a budget that belongs to the authenticated user.
 func (s *DefaultBudgetService) DeleteBudgetForUser(userID, budgetID uint) error {
 	budget, err := s.budgetRepo.GetBudgetByID(budgetID)
 	if err != nil {
-		return errors.New("budget not found")
+		return apperrors.NotFound("budget_not_found", "budget not found")
 	}
 
 	if budget.UserID != userID {
-		return errors.New("budget not found")
+		return apperrors.NotFound("budget_not_found", "budget not found")
 	}
 
-	return s.budgetRepo.DeleteBudget(budgetID)
+	if err := s.budgetRepo.DeleteBudget(budgetID); err != nil {
+		return apperrors.Internal("budget_delete_failed", "failed to delete budget", err)
+	}
+
+	return nil
 }
