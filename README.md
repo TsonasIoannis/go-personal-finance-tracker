@@ -91,14 +91,14 @@ The app uses these environment variables:
 
 Optional runtime tuning:
 
-| Variable                   | Required | Description                                  | Default |
-| -------------------------- | -------- | -------------------------------------------- | ------- |
-| `HTTP_READ_TIMEOUT`        | No       | Maximum time to read the full request        | `5s`    |
-| `HTTP_READ_HEADER_TIMEOUT` | No       | Maximum time to read request headers         | `2s`    |
-| `HTTP_WRITE_TIMEOUT`       | No       | Maximum time to write the response           | `10s`   |
-| `HTTP_IDLE_TIMEOUT`        | No       | Maximum keep-alive idle time                 | `60s`   |
-| `HTTP_SHUTDOWN_TIMEOUT`    | No       | Grace period for graceful shutdown           | `10s`   |
-| `AUTH_TOKEN_TTL`           | No       | Signed token lifetime                        | `24h`   |
+| Variable                   | Required | Description                           | Default |
+| -------------------------- | -------- | ------------------------------------- | ------- |
+| `HTTP_READ_TIMEOUT`        | No       | Maximum time to read the full request | `5s`    |
+| `HTTP_READ_HEADER_TIMEOUT` | No       | Maximum time to read request headers  | `2s`    |
+| `HTTP_WRITE_TIMEOUT`       | No       | Maximum time to write the response    | `10s`   |
+| `HTTP_IDLE_TIMEOUT`        | No       | Maximum keep-alive idle time          | `60s`   |
+| `HTTP_SHUTDOWN_TIMEOUT`    | No       | Grace period for graceful shutdown    | `10s`   |
+| `AUTH_TOKEN_TTL`           | No       | Signed token lifetime                 | `24h`   |
 
 An example file is included at [.env.example](c:/Users/Trelobarbouni/Documents/GitHub/go-personal-finance-tracker/.env.example).
 

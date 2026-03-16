@@ -46,9 +46,9 @@ func run() error {
 
 	if err := db.CheckConnection(); err != nil {
 		return fmt.Errorf("database health check failed: %w", err)
-	} else {
-		log.Println("Database is healthy.")
 	}
+
+	log.Println("Database is healthy.")
 
 	server := app.NewHTTPServer(cfg, db)
 	serverErrors := make(chan error, 1)
