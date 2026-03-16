@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+# [1.8.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.7.0...v1.8.0) (2026-03-16)
+
+
+### Features
+
+* add config bootstrap ([a3a77fe](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/a3a77fe1a9f315dcc0e2961908b921f383e76812))
+
 # [1.7.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.6.0...v1.7.0) (2026-03-16)
 
 
