@@ -45,6 +45,7 @@ jobs:
           VALIDATE_ALL_CODEBASE: true
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SAVE_SUPER_LINTER_SUMMARY: true
           FILTER_REGEX_EXCLUDE: CHANGELOG.md
           # We are using go modules not individual files
           VALIDATE_GO: false
