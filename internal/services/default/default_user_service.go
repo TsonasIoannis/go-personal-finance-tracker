@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"strings"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
@@ -18,7 +19,7 @@ func NewUserService(userRepo repositories.UserRepository) *DefaultUserService {
 }
 
 // RegisterUser creates a new user with a hashed password
-func (s *DefaultUserService) RegisterUser(name, email, password string) (*models.User, error) {
+func (s *DefaultUserService) RegisterUser(ctx context.Context, name, email, password string) (*models.User, error) {
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -27,7 +28,7 @@ func (s *DefaultUserService) RegisterUser(name, email, password string) (*models
 
 	// Create user
 	user := &models.User{Name: name, Email: email, Password: string(hashedPassword)}
-	err = s.userRepo.CreateUser(user)
+	err = s.userRepo.CreateUser(ctx, user)
 	if err != nil {
 		if isUniqueConstraintError(err) {
 			return nil, apperrors.Conflict("email_already_registered", "email already registered")
@@ -39,8 +40,8 @@ func (s *DefaultUserService) RegisterUser(name, email, password string) (*models
 }
 
 // AuthenticateUser checks email & password for login
-func (s *DefaultUserService) AuthenticateUser(email, password string) (*models.User, error) {
-	user, err := s.userRepo.GetUserByEmail(email)
+func (s *DefaultUserService) AuthenticateUser(ctx context.Context, email, password string) (*models.User, error) {
+	user, err := s.userRepo.GetUserByEmail(ctx, email)
 	if err != nil {
 		return nil, apperrors.Unauthorized("invalid_credentials", "invalid credentials")
 	}

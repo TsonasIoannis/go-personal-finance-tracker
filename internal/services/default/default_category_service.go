@@ -1,6 +1,8 @@
 package services
 
 import (
+	"context"
+
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/repositories"
 )
@@ -15,18 +17,18 @@ func NewCategoryService(categoryRepo repositories.CategoryRepository) DefaultCat
 	return DefaultCategoryService{categoryRepo: categoryRepo}
 }
 
-func (s *DefaultCategoryService) CreateCategory(category *models.Category) error {
-	return s.categoryRepo.CreateCategory(category)
+func (s *DefaultCategoryService) CreateCategory(ctx context.Context, category *models.Category) error {
+	return s.categoryRepo.CreateCategory(ctx, category)
 }
 
-func (s *DefaultCategoryService) GetCategories() ([]models.Category, error) {
-	return s.categoryRepo.GetAllCategories()
+func (s *DefaultCategoryService) GetCategories(ctx context.Context) ([]models.Category, error) {
+	return s.categoryRepo.GetAllCategories(ctx)
 }
 
-func (s *DefaultCategoryService) UpdateCategory(category *models.Category) error {
-	return s.categoryRepo.UpdateCategory(category)
+func (s *DefaultCategoryService) UpdateCategory(ctx context.Context, category *models.Category) error {
+	return s.categoryRepo.UpdateCategory(ctx, category)
 }
 
-func (s *DefaultCategoryService) DeleteCategory(categoryID uint) error {
-	return s.categoryRepo.DeleteCategory(categoryID)
+func (s *DefaultCategoryService) DeleteCategory(ctx context.Context, categoryID uint) error {
+	return s.categoryRepo.DeleteCategory(ctx, categoryID)
 }

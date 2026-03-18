@@ -30,6 +30,8 @@ type createTransactionRequest struct {
 
 // CreateTransaction adds a new transaction
 func (tc *TransactionController) CreateTransaction(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	userID, ok := currentUserID(c)
 	if !ok {
 		return
@@ -50,7 +52,7 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 		Note:       req.Note,
 	}
 
-	err := tc.transactionService.AddTransaction(&transaction)
+	err := tc.transactionService.AddTransaction(ctx, &transaction)
 	if err != nil {
 		httpapi.WriteError(c, err)
 		return
@@ -61,12 +63,14 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 
 // GetTransactions fetches all transactions for a user
 func (tc *TransactionController) GetTransactions(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	userID, ok := currentUserID(c)
 	if !ok {
 		return
 	}
 
-	transactions, err := tc.transactionService.GetTransactionsByUser(userID)
+	transactions, err := tc.transactionService.GetTransactionsByUser(ctx, userID)
 	if err != nil {
 		httpapi.WriteError(c, err)
 		return
@@ -77,6 +81,8 @@ func (tc *TransactionController) GetTransactions(c *gin.Context) {
 
 // DeleteTransaction removes a transaction
 func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	userID, ok := currentUserID(c)
 	if !ok {
 		return
@@ -88,7 +94,7 @@ func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
 		return
 	}
 
-	err = tc.transactionService.DeleteTransactionForUser(userID, uint(transactionID))
+	err = tc.transactionService.DeleteTransactionForUser(ctx, userID, uint(transactionID))
 	if err != nil {
 		httpapi.WriteError(c, err)
 		return

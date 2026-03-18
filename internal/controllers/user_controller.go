@@ -39,6 +39,7 @@ func NewUserController(userService services.UserService, tokenManager auth.Token
 
 // Register handles user registration
 func (uc *UserController) Register(c *gin.Context) {
+	ctx := c.Request.Context()
 	var req registerRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -46,7 +47,7 @@ func (uc *UserController) Register(c *gin.Context) {
 		return
 	}
 
-	createdUser, err := uc.userService.RegisterUser(req.Name, req.Email, req.Password)
+	createdUser, err := uc.userService.RegisterUser(ctx, req.Name, req.Email, req.Password)
 	if err != nil {
 		httpapi.WriteError(c, err)
 		return
@@ -67,6 +68,7 @@ func (uc *UserController) Register(c *gin.Context) {
 
 // Login handles user authentication
 func (uc *UserController) Login(c *gin.Context) {
+	ctx := c.Request.Context()
 	var req loginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -74,7 +76,7 @@ func (uc *UserController) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := uc.userService.AuthenticateUser(req.Email, req.Password)
+	user, err := uc.userService.AuthenticateUser(ctx, req.Email, req.Password)
 	if err != nil {
 		httpapi.WriteError(c, err)
 		return

@@ -1,6 +1,8 @@
 package services
 
 import (
+	"context"
+
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/repositories"
@@ -15,7 +17,7 @@ func NewBudgetService(budgetRepo repositories.BudgetRepository) *DefaultBudgetSe
 }
 
 // CreateBudget validates and adds a budget
-func (s *DefaultBudgetService) CreateBudget(budget *models.Budget) error {
+func (s *DefaultBudgetService) CreateBudget(ctx context.Context, budget *models.Budget) error {
 	if budget.Limit <= 0 {
 		return apperrors.Validation("invalid_budget_limit", "budget limit must be greater than zero")
 	}
@@ -24,7 +26,7 @@ func (s *DefaultBudgetService) CreateBudget(budget *models.Budget) error {
 		return apperrors.Validation("invalid_budget_date_range", "start date cannot be after end date")
 	}
 
-	if err := s.budgetRepo.CreateBudget(budget); err != nil {
+	if err := s.budgetRepo.CreateBudget(ctx, budget); err != nil {
 		return apperrors.Internal("budget_create_failed", "failed to create budget", err)
 	}
 
@@ -32,7 +34,7 @@ func (s *DefaultBudgetService) CreateBudget(budget *models.Budget) error {
 }
 
 // UpdateBudget modifies an existing budget
-func (s *DefaultBudgetService) UpdateBudget(budget *models.Budget) error {
+func (s *DefaultBudgetService) UpdateBudget(ctx context.Context, budget *models.Budget) error {
 	if budget.Limit <= 0 {
 		return apperrors.Validation("invalid_budget_limit", "budget limit must be positive")
 	}
@@ -41,7 +43,7 @@ func (s *DefaultBudgetService) UpdateBudget(budget *models.Budget) error {
 		return apperrors.Validation("invalid_budget_date_range", "start date cannot be after end date")
 	}
 
-	if err := s.budgetRepo.UpdateBudget(budget); err != nil {
+	if err := s.budgetRepo.UpdateBudget(ctx, budget); err != nil {
 		return apperrors.Internal("budget_update_failed", "failed to update budget", err)
 	}
 
@@ -49,8 +51,8 @@ func (s *DefaultBudgetService) UpdateBudget(budget *models.Budget) error {
 }
 
 // GetBudgetsByUser retrieves budgets for a user
-func (s *DefaultBudgetService) GetBudgetsByUser(userID uint) ([]models.Budget, error) {
-	budgets, err := s.budgetRepo.GetBudgetsByUserID(userID)
+func (s *DefaultBudgetService) GetBudgetsByUser(ctx context.Context, userID uint) ([]models.Budget, error) {
+	budgets, err := s.budgetRepo.GetBudgetsByUserID(ctx, userID)
 	if err != nil {
 		return nil, apperrors.Internal("budgets_fetch_failed", "failed to retrieve budgets", err)
 	}
@@ -59,8 +61,8 @@ func (s *DefaultBudgetService) GetBudgetsByUser(userID uint) ([]models.Budget, e
 }
 
 // DeleteBudgetForUser removes a budget that belongs to the authenticated user.
-func (s *DefaultBudgetService) DeleteBudgetForUser(userID, budgetID uint) error {
-	budget, err := s.budgetRepo.GetBudgetByID(budgetID)
+func (s *DefaultBudgetService) DeleteBudgetForUser(ctx context.Context, userID, budgetID uint) error {
+	budget, err := s.budgetRepo.GetBudgetByID(ctx, budgetID)
 	if err != nil {
 		return apperrors.NotFound("budget_not_found", "budget not found")
 	}
@@ -69,7 +71,7 @@ func (s *DefaultBudgetService) DeleteBudgetForUser(userID, budgetID uint) error 
 		return apperrors.NotFound("budget_not_found", "budget not found")
 	}
 
-	if err := s.budgetRepo.DeleteBudget(budgetID); err != nil {
+	if err := s.budgetRepo.DeleteBudget(ctx, budgetID); err != nil {
 		return apperrors.Internal("budget_delete_failed", "failed to delete budget", err)
 	}
 

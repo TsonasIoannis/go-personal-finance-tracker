@@ -30,6 +30,8 @@ type createBudgetRequest struct {
 
 // CreateBudget adds a new budget
 func (bc *BudgetController) CreateBudget(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	userID, ok := currentUserID(c)
 	if !ok {
 		return
@@ -49,7 +51,7 @@ func (bc *BudgetController) CreateBudget(c *gin.Context) {
 		EndDate:    req.EndDate,
 	}
 
-	if err := bc.budgetService.CreateBudget(&budget); err != nil {
+	if err := bc.budgetService.CreateBudget(ctx, &budget); err != nil {
 		httpapi.WriteError(c, err)
 		return
 	}
@@ -59,12 +61,14 @@ func (bc *BudgetController) CreateBudget(c *gin.Context) {
 
 // GetBudgets fetches all budgets for a user
 func (bc *BudgetController) GetBudgets(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	userID, ok := currentUserID(c)
 	if !ok {
 		return
 	}
 
-	budgets, err := bc.budgetService.GetBudgetsByUser(userID)
+	budgets, err := bc.budgetService.GetBudgetsByUser(ctx, userID)
 	if err != nil {
 		httpapi.WriteError(c, err)
 		return
@@ -75,6 +79,8 @@ func (bc *BudgetController) GetBudgets(c *gin.Context) {
 
 // DeleteBudget removes a budget
 func (bc *BudgetController) DeleteBudget(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	userID, ok := currentUserID(c)
 	if !ok {
 		return
@@ -86,7 +92,7 @@ func (bc *BudgetController) DeleteBudget(c *gin.Context) {
 		return
 	}
 
-	if err := bc.budgetService.DeleteBudgetForUser(userID, uint(budgetID)); err != nil {
+	if err := bc.budgetService.DeleteBudgetForUser(ctx, userID, uint(budgetID)); err != nil {
 		httpapi.WriteError(c, err)
 		return
 	}

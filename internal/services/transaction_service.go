@@ -1,12 +1,14 @@
 package services
 
 import (
+	"context"
+
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 )
 
 // TransactionService defines the interface for transaction operations
 type TransactionService interface {
-	AddTransaction(transaction *models.Transaction) error
-	GetTransactionsByUser(userID uint) ([]models.Transaction, error)
-	DeleteTransactionForUser(userID, transactionID uint) error
+	AddTransaction(ctx context.Context, transaction *models.Transaction) error
+	GetTransactionsByUser(ctx context.Context, userID uint) ([]models.Transaction, error)
+	DeleteTransactionForUser(ctx context.Context, userID, transactionID uint) error
 }

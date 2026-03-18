@@ -1,6 +1,8 @@
 package services
 
 import (
+	"context"
+
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/repositories"
 )
@@ -14,21 +16,21 @@ func NewPaymentMethodService(paymentMethodRepo repositories.PaymentMethodReposit
 }
 
 // AddPaymentMethod creates a new payment method
-func (s *DefaultPaymentMethodService) AddPaymentMethod(paymentMethod *models.PaymentMethod) error {
-	return s.paymentMethodRepo.CreatePaymentMethod(paymentMethod)
+func (s *DefaultPaymentMethodService) AddPaymentMethod(ctx context.Context, paymentMethod *models.PaymentMethod) error {
+	return s.paymentMethodRepo.CreatePaymentMethod(ctx, paymentMethod)
 }
 
 // GetPaymentMethodsByUser retrieves payment methods by user ID
-func (s *DefaultPaymentMethodService) GetPaymentMethodsByUser(userID uint) ([]models.PaymentMethod, error) {
-	return s.paymentMethodRepo.GetPaymentMethodsByUserID(userID)
+func (s *DefaultPaymentMethodService) GetPaymentMethodsByUser(ctx context.Context, userID uint) ([]models.PaymentMethod, error) {
+	return s.paymentMethodRepo.GetPaymentMethodsByUserID(ctx, userID)
 }
 
 // UpdatePaymentMethod modifies an existing payment method
-func (s *DefaultPaymentMethodService) UpdatePaymentMethod(paymentMethod *models.PaymentMethod) error {
-	return s.paymentMethodRepo.UpdatePaymentMethod(paymentMethod)
+func (s *DefaultPaymentMethodService) UpdatePaymentMethod(ctx context.Context, paymentMethod *models.PaymentMethod) error {
+	return s.paymentMethodRepo.UpdatePaymentMethod(ctx, paymentMethod)
 }
 
 // DeletePaymentMethod removes a payment method
-func (s *DefaultPaymentMethodService) DeletePaymentMethod(paymentMethodID uint) error {
-	return s.paymentMethodRepo.DeletePaymentMethod(paymentMethodID)
+func (s *DefaultPaymentMethodService) DeletePaymentMethod(ctx context.Context, paymentMethodID uint) error {
+	return s.paymentMethodRepo.DeletePaymentMethod(ctx, paymentMethodID)
 }

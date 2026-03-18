@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"context"
+
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"gorm.io/gorm"
 )
@@ -8,11 +10,11 @@ import (
 // BudgetRepository defines the required repository methods
 // This ensures other services can use different implementations if needed.
 type BudgetRepository interface {
-	CreateBudget(budget *models.Budget) error
-	GetBudgetByID(id uint) (*models.Budget, error)
-	GetBudgetsByUserID(userID uint) ([]models.Budget, error)
-	UpdateBudget(budget *models.Budget) error
-	DeleteBudget(id uint) error
+	CreateBudget(ctx context.Context, budget *models.Budget) error
+	GetBudgetByID(ctx context.Context, id uint) (*models.Budget, error)
+	GetBudgetsByUserID(ctx context.Context, userID uint) ([]models.Budget, error)
+	UpdateBudget(ctx context.Context, budget *models.Budget) error
+	DeleteBudget(ctx context.Context, id uint) error
 }
 
 // GormBudgetRepository handles DB operations for budgets using GORM
@@ -26,14 +28,14 @@ func NewGormBudgetRepository(db *gorm.DB) *GormBudgetRepository {
 }
 
 // CreateBudget inserts a new budget into the database
-func (r *GormBudgetRepository) CreateBudget(budget *models.Budget) error {
-	return r.db.Create(budget).Error
+func (r *GormBudgetRepository) CreateBudget(ctx context.Context, budget *models.Budget) error {
+	return r.db.WithContext(ctx).Create(budget).Error
 }
 
 // GetBudgetByID retrieves a budget by its ID
-func (r *GormBudgetRepository) GetBudgetByID(id uint) (*models.Budget, error) {
+func (r *GormBudgetRepository) GetBudgetByID(ctx context.Context, id uint) (*models.Budget, error) {
 	var budget models.Budget
-	err := r.db.First(&budget, id).Error
+	err := r.db.WithContext(ctx).First(&budget, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -41,18 +43,18 @@ func (r *GormBudgetRepository) GetBudgetByID(id uint) (*models.Budget, error) {
 }
 
 // GetBudgetsByUserID fetches all budgets for a specific user
-func (r *GormBudgetRepository) GetBudgetsByUserID(userID uint) ([]models.Budget, error) {
+func (r *GormBudgetRepository) GetBudgetsByUserID(ctx context.Context, userID uint) ([]models.Budget, error) {
 	var budgets []models.Budget
-	err := r.db.Where("user_id = ?", userID).Find(&budgets).Error
+	err := r.db.WithContext(ctx).Where("user_id = ?", userID).Find(&budgets).Error
 	return budgets, err
 }
 
 // UpdateBudget updates an existing budget
-func (r *GormBudgetRepository) UpdateBudget(budget *models.Budget) error {
-	return r.db.Save(budget).Error
+func (r *GormBudgetRepository) UpdateBudget(ctx context.Context, budget *models.Budget) error {
+	return r.db.WithContext(ctx).Save(budget).Error
 }
 
 // DeleteBudget removes a budget from the database
-func (r *GormBudgetRepository) DeleteBudget(id uint) error {
-	return r.db.Delete(&models.Budget{}, id).Error
+func (r *GormBudgetRepository) DeleteBudget(ctx context.Context, id uint) error {
+	return r.db.WithContext(ctx).Delete(&models.Budget{}, id).Error
 }
