@@ -1,5 +1,17 @@
 # Semantic Versioning Changelog
 
+# [1.12.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.11.0...v1.12.0) (2026-03-18)
+
+
+### Features
+
+* add initial observability logger ([0a56159](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/0a5615986e17ac445d0d77dced27b06c20d6a1ec))
+* add prometheus observability ([c383993](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/c3839935696191bc2c0027f1567c5b8bff34a869))
+* add request id ([665c6e2](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/665c6e2595fcb9f5b392a18c580a1d50cea877f3))
+* add structure logger ([2deb6a6](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/2deb6a6a1ade8d4e1815def8cec4db64ef202a53))
+* add tracer provider ([e7f69ed](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/e7f69ed0c195281db9bfef92eba1336d69a4f7cc))
+* add tracing ([3ec6f8a](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/3ec6f8a245ef347d99de2716e1ea9686767dea86))
+
 # [1.11.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.10.0...v1.11.0) (2026-03-18)
 
 
