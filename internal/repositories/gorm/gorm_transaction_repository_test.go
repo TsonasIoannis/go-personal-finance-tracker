@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -22,6 +23,7 @@ func setupTransactionTestDB(t *testing.T) *gorm.DB {
 func TestTransactionRepository(t *testing.T) {
 	db := setupTransactionTestDB(t)
 	repo := NewTransactionRepository(db)
+	ctx := context.Background()
 
 	// Create a test user for transactions
 	user := &models.User{Name: "Test User", Email: "test@example.com", Password: "hashedpassword"}
@@ -37,7 +39,7 @@ func TestTransactionRepository(t *testing.T) {
 			Note:       "Test transaction",
 		}
 
-		err := repo.CreateTransaction(transaction)
+		err := repo.CreateTransaction(ctx, transaction)
 		assert.NoError(t, err)
 
 		// Verify transaction was inserted
@@ -56,17 +58,17 @@ func TestTransactionRepository(t *testing.T) {
 			Date:       time.Now(),
 			Note:       "Salary payment",
 		}
-		err := repo.CreateTransaction(transaction)
+		err := repo.CreateTransaction(ctx, transaction)
 		assert.NoError(t, err)
 
-		foundTransaction, err := repo.GetTransactionByID(transaction.ID)
+		foundTransaction, err := repo.GetTransactionByID(ctx, transaction.ID)
 		assert.NoError(t, err)
 		assert.NotNil(t, foundTransaction)
 		assert.Equal(t, transaction.Amount, foundTransaction.Amount)
 	})
 
 	t.Run("GetTransactionByID_NotFound", func(t *testing.T) {
-		transaction, err := repo.GetTransactionByID(9999) // Non-existent ID
+		transaction, err := repo.GetTransactionByID(ctx, 9999) // Non-existent ID
 		assert.Error(t, err)
 		assert.Nil(t, transaction)
 		assert.Equal(t, gorm.ErrRecordNotFound, err)
@@ -76,12 +78,12 @@ func TestTransactionRepository(t *testing.T) {
 		// Reset transactions before running test
 		db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.Transaction{})
 
-		err1 := repo.CreateTransaction(&models.Transaction{UserID: user.ID, Type: "expense", Amount: 50, CategoryID: 1, Date: time.Now()})
+		err1 := repo.CreateTransaction(ctx, &models.Transaction{UserID: user.ID, Type: "expense", Amount: 50, CategoryID: 1, Date: time.Now()})
 		assert.NoError(t, err1)
-		err2 := repo.CreateTransaction(&models.Transaction{UserID: user.ID, Type: "income", Amount: 150, CategoryID: 2, Date: time.Now()})
+		err2 := repo.CreateTransaction(ctx, &models.Transaction{UserID: user.ID, Type: "income", Amount: 150, CategoryID: 2, Date: time.Now()})
 		assert.NoError(t, err2)
 
-		transactions, err := repo.GetTransactionsByUserID(user.ID)
+		transactions, err := repo.GetTransactionsByUserID(ctx, user.ID)
 		assert.NoError(t, err)
 		assert.Len(t, transactions, 2) // Ensure we only have 2 transactions
 	})
@@ -95,16 +97,16 @@ func TestTransactionRepository(t *testing.T) {
 			Date:       time.Now(),
 			Note:       "Old transaction",
 		}
-		err1 := repo.CreateTransaction(transaction)
+		err1 := repo.CreateTransaction(ctx, transaction)
 		assert.NoError(t, err1)
 
 		transaction.Amount = 600.00 // Update amount
 		transaction.Note = "Updated transaction"
-		err := repo.UpdateTransaction(transaction)
+		err := repo.UpdateTransaction(ctx, transaction)
 		assert.NoError(t, err)
 
 		// Verify update
-		updatedTransaction, err := repo.GetTransactionByID(transaction.ID)
+		updatedTransaction, err := repo.GetTransactionByID(ctx, transaction.ID)
 		assert.NoError(t, err)
 		assert.Equal(t, 600.00, updatedTransaction.Amount)
 		assert.Equal(t, "Updated transaction", updatedTransaction.Note)
@@ -119,10 +121,10 @@ func TestTransactionRepository(t *testing.T) {
 			Date:       time.Now(),
 			Note:       "To be deleted",
 		}
-		err1 := repo.CreateTransaction(transaction)
+		err1 := repo.CreateTransaction(ctx, transaction)
 		assert.NoError(t, err1)
 
-		err := repo.DeleteTransaction(transaction.ID)
+		err := repo.DeleteTransaction(ctx, transaction.ID)
 		assert.NoError(t, err)
 
 		// Verify deletion

@@ -1,14 +1,16 @@
 package repositories
 
 import (
+	"context"
+
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"gorm.io/gorm"
 )
 
 // UserRepository defines the required repository methods
 type UserRepository interface {
-	CreateUser(user *models.User) error
-	GetUserByEmail(email string) (*models.User, error)
+	CreateUser(ctx context.Context, user *models.User) error
+	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 }
 
 // GormUserRepository handles DB operations for users
@@ -22,14 +24,14 @@ func NewUserRepository(db *gorm.DB) *GormUserRepository {
 }
 
 // CreateUser inserts a new user into the database
-func (r *GormUserRepository) CreateUser(user *models.User) error {
-	return r.db.Create(user).Error
+func (r *GormUserRepository) CreateUser(ctx context.Context, user *models.User) error {
+	return r.db.WithContext(ctx).Create(user).Error
 }
 
 // GetUserByEmail retrieves a user by email
-func (r *GormUserRepository) GetUserByEmail(email string) (*models.User, error) {
+func (r *GormUserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
-	err := r.db.Where("email = ?", email).First(&user).Error
+	err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -37,6 +39,6 @@ func (r *GormUserRepository) GetUserByEmail(email string) (*models.User, error) 
 }
 
 // DeleteUser removes a user from the database
-func (r *GormUserRepository) DeleteUser(id uint) error {
-	return r.db.Delete(&models.User{}, id).Error
+func (r *GormUserRepository) DeleteUser(ctx context.Context, id uint) error {
+	return r.db.WithContext(ctx).Delete(&models.User{}, id).Error
 }

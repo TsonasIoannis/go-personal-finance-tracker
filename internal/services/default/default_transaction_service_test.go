@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -16,31 +17,31 @@ type MockTransactionRepository struct {
 	mock.Mock
 }
 
-func (m *MockTransactionRepository) CreateTransaction(transaction *models.Transaction) error {
-	args := m.Called(transaction)
+func (m *MockTransactionRepository) CreateTransaction(ctx context.Context, transaction *models.Transaction) error {
+	args := m.Called(ctx, transaction)
 	return args.Error(0)
 }
 
-func (m *MockTransactionRepository) GetTransactionByID(id uint) (*models.Transaction, error) {
-	args := m.Called(id)
+func (m *MockTransactionRepository) GetTransactionByID(ctx context.Context, id uint) (*models.Transaction, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) != nil {
 		return args.Get(0).(*models.Transaction), args.Error(1)
 	}
 	return nil, args.Error(1)
 }
 
-func (m *MockTransactionRepository) GetTransactionsByUserID(userID uint) ([]models.Transaction, error) {
-	args := m.Called(userID)
+func (m *MockTransactionRepository) GetTransactionsByUserID(ctx context.Context, userID uint) ([]models.Transaction, error) {
+	args := m.Called(ctx, userID)
 	return args.Get(0).([]models.Transaction), args.Error(1)
 }
 
-func (m *MockTransactionRepository) UpdateTransaction(transaction *models.Transaction) error {
-	args := m.Called(transaction)
+func (m *MockTransactionRepository) UpdateTransaction(ctx context.Context, transaction *models.Transaction) error {
+	args := m.Called(ctx, transaction)
 	return args.Error(0)
 }
 
-func (m *MockTransactionRepository) DeleteTransaction(id uint) error {
-	args := m.Called(id)
+func (m *MockTransactionRepository) DeleteTransaction(ctx context.Context, id uint) error {
+	args := m.Called(ctx, id)
 	return args.Error(0)
 }
 
@@ -48,6 +49,7 @@ func TestAddTransaction(t *testing.T) {
 	mockTransactionRepo := new(MockTransactionRepository)
 	mockBudgetRepo := new(MockBudgetRepository)
 	service := NewTransactionService(mockTransactionRepo, mockBudgetRepo)
+	ctx := context.Background()
 
 	t.Run("Create valid transaction", func(t *testing.T) {
 		mockTransactionRepo.ExpectedCalls = nil // Reset expectations
@@ -61,10 +63,10 @@ func TestAddTransaction(t *testing.T) {
 			Date:       time.Now(),
 		}
 
-		mockBudgetRepo.On("GetBudgetsByUserID", uint(1)).Return([]models.Budget{}, nil)
-		mockTransactionRepo.On("CreateTransaction", transaction).Return(nil)
+		mockBudgetRepo.On("GetBudgetsByUserID", ctx, uint(1)).Return([]models.Budget{}, nil)
+		mockTransactionRepo.On("CreateTransaction", ctx, transaction).Return(nil)
 
-		err := service.AddTransaction(transaction)
+		err := service.AddTransaction(ctx, transaction)
 		assert.NoError(t, err)
 		mockTransactionRepo.AssertExpectations(t)
 	})
@@ -85,9 +87,9 @@ func TestAddTransaction(t *testing.T) {
 			{UserID: 1, CategoryID: 2, Limit: 1000.00},
 		}
 
-		mockBudgetRepo.On("GetBudgetsByUserID", uint(1)).Return(budgets, nil)
+		mockBudgetRepo.On("GetBudgetsByUserID", ctx, uint(1)).Return(budgets, nil)
 
-		err := service.AddTransaction(transaction)
+		err := service.AddTransaction(ctx, transaction)
 		assert.Error(t, err)
 		assert.Equal(t, "transaction exceeds budget limit", err.Error())
 		assert.True(t, isAppErrorKind(err, apperrors.KindValidation))
@@ -106,9 +108,9 @@ func TestAddTransaction(t *testing.T) {
 		}
 
 		// Simulate an error when retrieving budgets
-		mockBudgetRepo.On("GetBudgetsByUserID", uint(1)).Return([]models.Budget{}, errors.New("database error"))
+		mockBudgetRepo.On("GetBudgetsByUserID", ctx, uint(1)).Return([]models.Budget{}, errors.New("database error"))
 
-		err := service.AddTransaction(transaction)
+		err := service.AddTransaction(ctx, transaction)
 
 		// Ensure the error is returned
 		assert.Error(t, err)
@@ -124,6 +126,7 @@ func TestAddTransaction(t *testing.T) {
 func TestGetTransactionsByUser(t *testing.T) {
 	mockTransactionRepo := new(MockTransactionRepository)
 	service := NewTransactionService(mockTransactionRepo, nil)
+	ctx := context.Background()
 
 	t.Run("Retrieve transactions for user", func(t *testing.T) {
 		transactions := []models.Transaction{
@@ -131,9 +134,9 @@ func TestGetTransactionsByUser(t *testing.T) {
 			{ID: 2, UserID: 1, Type: "income", Amount: 200, CategoryID: 2},
 		}
 
-		mockTransactionRepo.On("GetTransactionsByUserID", uint(1)).Return(transactions, nil)
+		mockTransactionRepo.On("GetTransactionsByUserID", ctx, uint(1)).Return(transactions, nil)
 
-		result, err := service.GetTransactionsByUser(1)
+		result, err := service.GetTransactionsByUser(ctx, 1)
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
 		mockTransactionRepo.AssertExpectations(t)
@@ -143,20 +146,21 @@ func TestGetTransactionsByUser(t *testing.T) {
 func TestDeleteTransaction(t *testing.T) {
 	mockTransactionRepo := new(MockTransactionRepository)
 	service := NewTransactionService(mockTransactionRepo, nil)
+	ctx := context.Background()
 
 	t.Run("Delete existing transaction", func(t *testing.T) {
-		mockTransactionRepo.On("GetTransactionByID", uint(1)).Return(&models.Transaction{ID: 1, UserID: 1}, nil)
-		mockTransactionRepo.On("DeleteTransaction", uint(1)).Return(nil)
+		mockTransactionRepo.On("GetTransactionByID", ctx, uint(1)).Return(&models.Transaction{ID: 1, UserID: 1}, nil)
+		mockTransactionRepo.On("DeleteTransaction", ctx, uint(1)).Return(nil)
 
-		err := service.DeleteTransactionForUser(1, 1)
+		err := service.DeleteTransactionForUser(ctx, 1, 1)
 		assert.NoError(t, err)
 		mockTransactionRepo.AssertExpectations(t)
 	})
 
 	t.Run("Fail to delete non-existent transaction", func(t *testing.T) {
-		mockTransactionRepo.On("GetTransactionByID", uint(9999)).Return(nil, errors.New("transaction not found"))
+		mockTransactionRepo.On("GetTransactionByID", ctx, uint(9999)).Return(nil, errors.New("transaction not found"))
 
-		err := service.DeleteTransactionForUser(1, 9999)
+		err := service.DeleteTransactionForUser(ctx, 1, 9999)
 		assert.Error(t, err)
 		assert.Equal(t, "transaction not found", err.Error())
 		assert.True(t, isAppErrorKind(err, apperrors.KindNotFound))
@@ -164,9 +168,9 @@ func TestDeleteTransaction(t *testing.T) {
 	})
 
 	t.Run("Fail to delete another user's transaction", func(t *testing.T) {
-		mockTransactionRepo.On("GetTransactionByID", uint(2)).Return(&models.Transaction{ID: 2, UserID: 99}, nil)
+		mockTransactionRepo.On("GetTransactionByID", ctx, uint(2)).Return(&models.Transaction{ID: 2, UserID: 99}, nil)
 
-		err := service.DeleteTransactionForUser(1, 2)
+		err := service.DeleteTransactionForUser(ctx, 1, 2)
 		assert.Error(t, err)
 		assert.Equal(t, "transaction not found", err.Error())
 		assert.True(t, isAppErrorKind(err, apperrors.KindNotFound))

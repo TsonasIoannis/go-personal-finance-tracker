@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -14,43 +15,44 @@ type MockPaymentMethodRepository struct {
 	mock.Mock
 }
 
-func (m *MockPaymentMethodRepository) CreatePaymentMethod(paymentMethod *models.PaymentMethod) error {
-	args := m.Called(paymentMethod)
+func (m *MockPaymentMethodRepository) CreatePaymentMethod(ctx context.Context, paymentMethod *models.PaymentMethod) error {
+	args := m.Called(ctx, paymentMethod)
 	return args.Error(0)
 }
 
-func (m *MockPaymentMethodRepository) GetPaymentMethodByID(id uint) (*models.PaymentMethod, error) {
-	args := m.Called(id)
+func (m *MockPaymentMethodRepository) GetPaymentMethodByID(ctx context.Context, id uint) (*models.PaymentMethod, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) != nil {
 		return args.Get(0).(*models.PaymentMethod), args.Error(1)
 	}
 	return nil, args.Error(1)
 }
 
-func (m *MockPaymentMethodRepository) GetPaymentMethodsByUserID(userID uint) ([]models.PaymentMethod, error) {
-	args := m.Called(userID)
+func (m *MockPaymentMethodRepository) GetPaymentMethodsByUserID(ctx context.Context, userID uint) ([]models.PaymentMethod, error) {
+	args := m.Called(ctx, userID)
 	return args.Get(0).([]models.PaymentMethod), args.Error(1)
 }
 
-func (m *MockPaymentMethodRepository) UpdatePaymentMethod(paymentMethod *models.PaymentMethod) error {
-	args := m.Called(paymentMethod)
+func (m *MockPaymentMethodRepository) UpdatePaymentMethod(ctx context.Context, paymentMethod *models.PaymentMethod) error {
+	args := m.Called(ctx, paymentMethod)
 	return args.Error(0)
 }
 
-func (m *MockPaymentMethodRepository) DeletePaymentMethod(id uint) error {
-	args := m.Called(id)
+func (m *MockPaymentMethodRepository) DeletePaymentMethod(ctx context.Context, id uint) error {
+	args := m.Called(ctx, id)
 	return args.Error(0)
 }
 
 func TestAddPaymentMethod(t *testing.T) {
 	mockRepo := new(MockPaymentMethodRepository)
 	service := NewPaymentMethodService(mockRepo)
+	ctx := context.Background()
 
 	t.Run("Create valid payment method", func(t *testing.T) {
 		paymentMethod := &models.PaymentMethod{Name: "Credit Card", UserID: 1}
-		mockRepo.On("CreatePaymentMethod", paymentMethod).Return(nil)
+		mockRepo.On("CreatePaymentMethod", ctx, paymentMethod).Return(nil)
 
-		err := service.AddPaymentMethod(paymentMethod)
+		err := service.AddPaymentMethod(ctx, paymentMethod)
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
 	})
@@ -59,6 +61,7 @@ func TestAddPaymentMethod(t *testing.T) {
 func TestGetPaymentMethodsByUser(t *testing.T) {
 	mockRepo := new(MockPaymentMethodRepository)
 	service := NewPaymentMethodService(mockRepo)
+	ctx := context.Background()
 
 	t.Run("Retrieve multiple payment methods", func(t *testing.T) {
 		mockRepo.ExpectedCalls = nil // Reset expectations
@@ -68,9 +71,9 @@ func TestGetPaymentMethodsByUser(t *testing.T) {
 			{ID: 2, Name: "Google Pay", UserID: 1},
 		}
 
-		mockRepo.On("GetPaymentMethodsByUserID", uint(1)).Return(paymentMethods, nil)
+		mockRepo.On("GetPaymentMethodsByUserID", ctx, uint(1)).Return(paymentMethods, nil)
 
-		result, err := service.GetPaymentMethodsByUser(1)
+		result, err := service.GetPaymentMethodsByUser(ctx, 1)
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
 		mockRepo.AssertExpectations(t)
@@ -79,9 +82,9 @@ func TestGetPaymentMethodsByUser(t *testing.T) {
 	t.Run("Retrieve payment methods when none exist", func(t *testing.T) {
 		mockRepo.ExpectedCalls = nil // Reset expectations
 
-		mockRepo.On("GetPaymentMethodsByUserID", uint(999)).Return([]models.PaymentMethod{}, nil)
+		mockRepo.On("GetPaymentMethodsByUserID", ctx, uint(999)).Return([]models.PaymentMethod{}, nil)
 
-		result, err := service.GetPaymentMethodsByUser(999)
+		result, err := service.GetPaymentMethodsByUser(ctx, 999)
 		assert.NoError(t, err)
 		assert.Len(t, result, 0)
 		mockRepo.AssertExpectations(t)
@@ -91,21 +94,22 @@ func TestGetPaymentMethodsByUser(t *testing.T) {
 func TestUpdatePaymentMethod(t *testing.T) {
 	mockRepo := new(MockPaymentMethodRepository)
 	service := NewPaymentMethodService(mockRepo)
+	ctx := context.Background()
 
 	t.Run("Update existing payment method", func(t *testing.T) {
 		paymentMethod := &models.PaymentMethod{ID: 1, Name: "Bank Transfer", UserID: 1}
-		mockRepo.On("UpdatePaymentMethod", paymentMethod).Return(nil)
+		mockRepo.On("UpdatePaymentMethod", ctx, paymentMethod).Return(nil)
 
-		err := service.UpdatePaymentMethod(paymentMethod)
+		err := service.UpdatePaymentMethod(ctx, paymentMethod)
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("Fail to update non-existent payment method", func(t *testing.T) {
 		paymentMethod := &models.PaymentMethod{ID: 9999, Name: "Cryptocurrency", UserID: 1}
-		mockRepo.On("UpdatePaymentMethod", paymentMethod).Return(errors.New("payment method not found"))
+		mockRepo.On("UpdatePaymentMethod", ctx, paymentMethod).Return(errors.New("payment method not found"))
 
-		err := service.UpdatePaymentMethod(paymentMethod)
+		err := service.UpdatePaymentMethod(ctx, paymentMethod)
 		assert.Error(t, err)
 		assert.Equal(t, "payment method not found", err.Error())
 		mockRepo.AssertExpectations(t)
@@ -115,19 +119,20 @@ func TestUpdatePaymentMethod(t *testing.T) {
 func TestDeletePaymentMethod(t *testing.T) {
 	mockRepo := new(MockPaymentMethodRepository)
 	service := NewPaymentMethodService(mockRepo)
+	ctx := context.Background()
 
 	t.Run("Delete existing payment method", func(t *testing.T) {
-		mockRepo.On("DeletePaymentMethod", uint(1)).Return(nil)
+		mockRepo.On("DeletePaymentMethod", ctx, uint(1)).Return(nil)
 
-		err := service.DeletePaymentMethod(1)
+		err := service.DeletePaymentMethod(ctx, 1)
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("Fail to delete non-existent payment method", func(t *testing.T) {
-		mockRepo.On("DeletePaymentMethod", uint(9999)).Return(errors.New("payment method not found"))
+		mockRepo.On("DeletePaymentMethod", ctx, uint(9999)).Return(errors.New("payment method not found"))
 
-		err := service.DeletePaymentMethod(9999)
+		err := service.DeletePaymentMethod(ctx, 9999)
 		assert.Error(t, err)
 		assert.Equal(t, "payment method not found", err.Error())
 		mockRepo.AssertExpectations(t)

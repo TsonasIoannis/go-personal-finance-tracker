@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -37,16 +38,16 @@ type MockUserService struct {
 	mock.Mock
 }
 
-func (m *MockUserService) RegisterUser(name, email, password string) (*models.User, error) {
-	args := m.Called(name, email, password)
+func (m *MockUserService) RegisterUser(ctx context.Context, name, email, password string) (*models.User, error) {
+	args := m.Called(ctx, name, email, password)
 	if args.Get(0) != nil {
 		return args.Get(0).(*models.User), args.Error(1)
 	}
 	return nil, args.Error(1)
 }
 
-func (m *MockUserService) AuthenticateUser(email, password string) (*models.User, error) {
-	args := m.Called(email, password)
+func (m *MockUserService) AuthenticateUser(ctx context.Context, email, password string) (*models.User, error) {
+	args := m.Called(ctx, email, password)
 	if args.Get(0) != nil {
 		return args.Get(0).(*models.User), args.Error(1)
 	}
@@ -72,7 +73,7 @@ func TestRegister(t *testing.T) {
 			Email: "alice@example.com",
 		}
 
-		mockService.On("RegisterUser", "Alice", "alice@example.com", "secure123").
+		mockService.On("RegisterUser", mock.Anything, "Alice", "alice@example.com", "secure123").
 			Return(expected, nil).Once()
 		mockTokenManager.On("GenerateToken", expected).Return("token-123", nil).Once()
 
@@ -122,7 +123,7 @@ func TestRegister(t *testing.T) {
 			"password": "password123",
 		}
 
-		mockService.On("RegisterUser", "Bob", "bob@example.com", "password123").
+		mockService.On("RegisterUser", mock.Anything, "Bob", "bob@example.com", "password123").
 			Return((*models.User)(nil), apperrors.Conflict("email_already_registered", "email already registered")).Once()
 
 		w := httptest.NewRecorder()
@@ -153,7 +154,7 @@ func TestLogin(t *testing.T) {
 		password := "secure123"
 		expected := &models.User{ID: 1, Name: "Alice", Email: email}
 
-		mockService.On("AuthenticateUser", email, password).
+		mockService.On("AuthenticateUser", mock.Anything, email, password).
 			Return(expected, nil).Once()
 		mockTokenManager.On("GenerateToken", expected).Return("token-abc", nil).Once()
 
@@ -205,7 +206,7 @@ func TestLogin(t *testing.T) {
 		email := "bob@example.com"
 		password := "wrongpass"
 
-		mockService.On("AuthenticateUser", email, password).
+		mockService.On("AuthenticateUser", mock.Anything, email, password).
 			Return((*models.User)(nil), apperrors.Unauthorized("invalid_credentials", "invalid credentials")).Once()
 
 		body := map[string]string{"email": email, "password": password}

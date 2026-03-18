@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"testing"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
@@ -21,6 +22,7 @@ func setupPaymentTestDB(t *testing.T) *gorm.DB {
 func TestCreatePaymentMethod(t *testing.T) {
 	db := setupPaymentTestDB(t)
 	repo := NewPaymentMethodRepository(db)
+	ctx := context.Background()
 
 	// Ensure related entity (User) exists
 	user := &models.User{Name: "Test User", Email: "test@example.com", Password: "hashedpassword"}
@@ -28,7 +30,7 @@ func TestCreatePaymentMethod(t *testing.T) {
 
 	t.Run("Create valid payment method", func(t *testing.T) {
 		paymentMethod := &models.PaymentMethod{Name: "Credit Card", UserID: user.ID}
-		err := repo.CreatePaymentMethod(paymentMethod)
+		err := repo.CreatePaymentMethod(ctx, paymentMethod)
 		assert.NoError(t, err)
 
 		var retrievedPaymentMethod models.PaymentMethod
@@ -41,10 +43,10 @@ func TestCreatePaymentMethod(t *testing.T) {
 		paymentMethod1 := &models.PaymentMethod{Name: "PayPal", UserID: user.ID}
 		paymentMethod2 := &models.PaymentMethod{Name: "PayPal", UserID: user.ID} // Duplicate
 
-		err := repo.CreatePaymentMethod(paymentMethod1)
+		err := repo.CreatePaymentMethod(ctx, paymentMethod1)
 		assert.NoError(t, err)
 
-		err = repo.CreatePaymentMethod(paymentMethod2) // Should fail due to unique constraint
+		err = repo.CreatePaymentMethod(ctx, paymentMethod2) // Should fail due to unique constraint
 		assert.Error(t, err)
 	})
 }
@@ -53,6 +55,7 @@ func TestCreatePaymentMethod(t *testing.T) {
 func TestGetPaymentMethodByID(t *testing.T) {
 	db := setupPaymentTestDB(t)
 	repo := NewPaymentMethodRepository(db)
+	ctx := context.Background()
 
 	// Ensure related entity (User) exists
 	user := &models.User{Name: "Test User", Email: "test@example.com", Password: "hashedpassword"}
@@ -60,17 +63,17 @@ func TestGetPaymentMethodByID(t *testing.T) {
 
 	t.Run("Retrieve existing payment method", func(t *testing.T) {
 		paymentMethod := &models.PaymentMethod{Name: "Debit Card", UserID: user.ID}
-		err := repo.CreatePaymentMethod(paymentMethod)
+		err := repo.CreatePaymentMethod(ctx, paymentMethod)
 		assert.NoError(t, err)
 
-		foundPaymentMethod, err := repo.GetPaymentMethodByID(paymentMethod.ID)
+		foundPaymentMethod, err := repo.GetPaymentMethodByID(ctx, paymentMethod.ID)
 		assert.NoError(t, err)
 		assert.NotNil(t, foundPaymentMethod)
 		assert.Equal(t, paymentMethod.Name, foundPaymentMethod.Name)
 	})
 
 	t.Run("Retrieve non-existent payment method", func(t *testing.T) {
-		paymentMethod, err := repo.GetPaymentMethodByID(9999) // Non-existent ID
+		paymentMethod, err := repo.GetPaymentMethodByID(ctx, 9999) // Non-existent ID
 		assert.Error(t, err)
 		assert.Nil(t, paymentMethod)
 		assert.Equal(t, gorm.ErrRecordNotFound, err)
@@ -81,6 +84,7 @@ func TestGetPaymentMethodByID(t *testing.T) {
 func TestGetPaymentMethodsByUserID(t *testing.T) {
 	db := setupPaymentTestDB(t)
 	repo := NewPaymentMethodRepository(db)
+	ctx := context.Background()
 
 	// Ensure related entity (User) exists
 	user := &models.User{Name: "Test User", Email: "test@example.com", Password: "hashedpassword"}
@@ -89,18 +93,18 @@ func TestGetPaymentMethodsByUserID(t *testing.T) {
 	t.Run("User has multiple payment methods", func(t *testing.T) {
 		paymentMethod1 := &models.PaymentMethod{Name: "Apple Pay", UserID: user.ID}
 		paymentMethod2 := &models.PaymentMethod{Name: "Google Pay", UserID: user.ID}
-		err1 := repo.CreatePaymentMethod(paymentMethod1)
+		err1 := repo.CreatePaymentMethod(ctx, paymentMethod1)
 		assert.NoError(t, err1)
-		err2 := repo.CreatePaymentMethod(paymentMethod2)
+		err2 := repo.CreatePaymentMethod(ctx, paymentMethod2)
 		assert.NoError(t, err2)
 
-		paymentMethods, err := repo.GetPaymentMethodsByUserID(user.ID)
+		paymentMethods, err := repo.GetPaymentMethodsByUserID(ctx, user.ID)
 		assert.NoError(t, err)
 		assert.Len(t, paymentMethods, 2)
 	})
 
 	t.Run("User has no payment methods", func(t *testing.T) {
-		paymentMethods, err := repo.GetPaymentMethodsByUserID(9999) // Non-existent user
+		paymentMethods, err := repo.GetPaymentMethodsByUserID(ctx, 9999) // Non-existent user
 		assert.NoError(t, err)
 		assert.Len(t, paymentMethods, 0)
 	})
@@ -110,6 +114,7 @@ func TestGetPaymentMethodsByUserID(t *testing.T) {
 func TestUpdatePaymentMethod(t *testing.T) {
 	db := setupPaymentTestDB(t)
 	repo := NewPaymentMethodRepository(db)
+	ctx := context.Background()
 
 	// Ensure related entity (User) exists
 	user := &models.User{Name: "Test User", Email: "test@example.com", Password: "hashedpassword"}
@@ -117,12 +122,12 @@ func TestUpdatePaymentMethod(t *testing.T) {
 
 	t.Run("Update existing payment method", func(t *testing.T) {
 		paymentMethod := &models.PaymentMethod{Name: "Bank Transfer", UserID: user.ID}
-		err1 := repo.CreatePaymentMethod(paymentMethod)
+		err1 := repo.CreatePaymentMethod(ctx, paymentMethod)
 		assert.NoError(t, err1)
 
 		// Update the payment method
 		paymentMethod.Name = "Wire Transfer"
-		err := repo.UpdatePaymentMethod(paymentMethod)
+		err := repo.UpdatePaymentMethod(ctx, paymentMethod)
 		assert.NoError(t, err)
 
 		// Fetch updated payment method
@@ -137,6 +142,7 @@ func TestUpdatePaymentMethod(t *testing.T) {
 func TestDeletePaymentMethod(t *testing.T) {
 	db := setupPaymentTestDB(t)
 	repo := NewPaymentMethodRepository(db)
+	ctx := context.Background()
 
 	// Ensure related entity (User) exists
 	user := &models.User{Name: "Test User", Email: "test@example.com", Password: "hashedpassword"}
@@ -144,10 +150,10 @@ func TestDeletePaymentMethod(t *testing.T) {
 
 	t.Run("Delete existing payment method", func(t *testing.T) {
 		paymentMethod := &models.PaymentMethod{Name: "Venmo", UserID: user.ID}
-		err1 := repo.CreatePaymentMethod(paymentMethod)
+		err1 := repo.CreatePaymentMethod(ctx, paymentMethod)
 		assert.NoError(t, err1)
 
-		err := repo.DeletePaymentMethod(paymentMethod.ID)
+		err := repo.DeletePaymentMethod(ctx, paymentMethod.ID)
 		assert.NoError(t, err)
 
 		var deletedPaymentMethod models.PaymentMethod
@@ -157,7 +163,7 @@ func TestDeletePaymentMethod(t *testing.T) {
 	})
 
 	t.Run("Delete non-existent payment method", func(t *testing.T) {
-		err := repo.DeletePaymentMethod(9999) // Non-existent ID
-		assert.NoError(t, err)                // `gorm.Delete` does not return an error if the record doesn't exist
+		err := repo.DeletePaymentMethod(ctx, 9999) // Non-existent ID
+		assert.NoError(t, err)                     // `gorm.Delete` does not return an error if the record doesn't exist
 	})
 }

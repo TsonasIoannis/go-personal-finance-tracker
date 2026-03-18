@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -16,13 +17,13 @@ type MockUserRepository struct {
 	mock.Mock
 }
 
-func (m *MockUserRepository) CreateUser(user *models.User) error {
-	args := m.Called(user)
+func (m *MockUserRepository) CreateUser(ctx context.Context, user *models.User) error {
+	args := m.Called(ctx, user)
 	return args.Error(0)
 }
 
-func (m *MockUserRepository) GetUserByEmail(email string) (*models.User, error) {
-	args := m.Called(email)
+func (m *MockUserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	args := m.Called(ctx, email)
 	if args.Get(0) != nil {
 		return args.Get(0).(*models.User), args.Error(1)
 	}
@@ -32,15 +33,16 @@ func (m *MockUserRepository) GetUserByEmail(email string) (*models.User, error) 
 func TestRegisterUser(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	service := NewUserService(mockRepo)
+	ctx := context.Background()
 
 	t.Run("Register valid user", func(t *testing.T) {
-		mockRepo.On("CreateUser", mock.MatchedBy(func(u *models.User) bool {
+		mockRepo.On("CreateUser", ctx, mock.MatchedBy(func(u *models.User) bool {
 			// Check that the password is hashed
 			err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte("mypassword"))
 			return err == nil
 		})).Return(nil)
 
-		createdUser, err := service.RegisterUser("John Doe", "john@example.com", "mypassword")
+		createdUser, err := service.RegisterUser(ctx, "John Doe", "john@example.com", "mypassword")
 		assert.NoError(t, err)
 		assert.NotNil(t, createdUser)
 		assert.Equal(t, "John Doe", createdUser.Name)
@@ -50,9 +52,9 @@ func TestRegisterUser(t *testing.T) {
 	t.Run("Fail when repository returns an error", func(t *testing.T) {
 		mockRepo.ExpectedCalls = nil // Reset expectations
 
-		mockRepo.On("CreateUser", mock.Anything).Return(errors.New("database error"))
+		mockRepo.On("CreateUser", ctx, mock.Anything).Return(errors.New("database error"))
 
-		createdUser, err := service.RegisterUser("Jane Doe", "jane@example.com", "securepassword")
+		createdUser, err := service.RegisterUser(ctx, "Jane Doe", "jane@example.com", "securepassword")
 
 		// Ensure the error is returned
 		assert.Error(t, err)
@@ -69,7 +71,7 @@ func TestRegisterUser(t *testing.T) {
 		// Create an excessively long password
 		longPassword := string(make([]byte, 1000)) // 1000 bytes long
 
-		createdUser, err := service.RegisterUser("John Doe", "john@example.com", longPassword)
+		createdUser, err := service.RegisterUser(ctx, "John Doe", "john@example.com", longPassword)
 
 		// Ensure bcrypt failure occurs
 		assert.Error(t, err)
@@ -84,15 +86,16 @@ func TestRegisterUser(t *testing.T) {
 func TestAuthenticateUser(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	service := NewUserService(mockRepo)
+	ctx := context.Background()
 
 	t.Run("Authenticate valid user", func(t *testing.T) {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte("mypassword"), bcrypt.DefaultCost)
 		assert.NoError(t, err)
 		user := &models.User{Name: "John Doe", Email: "john@example.com", Password: string(hashedPassword)}
 
-		mockRepo.On("GetUserByEmail", "john@example.com").Return(user, nil)
+		mockRepo.On("GetUserByEmail", ctx, "john@example.com").Return(user, nil)
 
-		authenticatedUser, err := service.AuthenticateUser("john@example.com", "mypassword")
+		authenticatedUser, err := service.AuthenticateUser(ctx, "john@example.com", "mypassword")
 		assert.NoError(t, err)
 		assert.NotNil(t, authenticatedUser)
 		assert.Equal(t, "John Doe", authenticatedUser.Name)
@@ -100,9 +103,9 @@ func TestAuthenticateUser(t *testing.T) {
 	})
 
 	t.Run("Fail when user does not exist", func(t *testing.T) {
-		mockRepo.On("GetUserByEmail", "nonexistent@example.com").Return(nil, errors.New("not found"))
+		mockRepo.On("GetUserByEmail", ctx, "nonexistent@example.com").Return(nil, errors.New("not found"))
 
-		authenticatedUser, err := service.AuthenticateUser("nonexistent@example.com", "password")
+		authenticatedUser, err := service.AuthenticateUser(ctx, "nonexistent@example.com", "password")
 		assert.Error(t, err)
 		assert.Nil(t, authenticatedUser)
 		assert.Equal(t, "invalid credentials", err.Error())
@@ -114,9 +117,9 @@ func TestAuthenticateUser(t *testing.T) {
 		assert.NoError(t, err)
 		user := &models.User{Name: "John Doe", Email: "john@example.com", Password: string(hashedPassword)}
 
-		mockRepo.On("GetUserByEmail", "john@example.com").Return(user, nil)
+		mockRepo.On("GetUserByEmail", ctx, "john@example.com").Return(user, nil)
 
-		authenticatedUser, err := service.AuthenticateUser("john@example.com", "wrongpassword")
+		authenticatedUser, err := service.AuthenticateUser(ctx, "john@example.com", "wrongpassword")
 		assert.Error(t, err)
 		assert.Nil(t, authenticatedUser)
 		assert.Equal(t, "invalid credentials", err.Error())

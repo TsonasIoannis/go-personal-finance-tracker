@@ -1,6 +1,8 @@
 package services
 
 import (
+	"context"
+
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/repositories"
@@ -16,9 +18,9 @@ func NewTransactionService(transactionRepo repositories.TransactionRepository, b
 }
 
 // AddTransaction validates and saves a transaction
-func (s *DefaultTransactionService) AddTransaction(transaction *models.Transaction) error {
+func (s *DefaultTransactionService) AddTransaction(ctx context.Context, transaction *models.Transaction) error {
 	// Check if transaction exceeds budget
-	budgets, err := s.budgetRepo.GetBudgetsByUserID(transaction.UserID)
+	budgets, err := s.budgetRepo.GetBudgetsByUserID(ctx, transaction.UserID)
 	if err != nil {
 		return apperrors.Internal("budget_lookup_failed", "failed to validate transaction budget", err)
 	}
@@ -31,7 +33,7 @@ func (s *DefaultTransactionService) AddTransaction(transaction *models.Transacti
 		}
 	}
 
-	if err := s.transactionRepo.CreateTransaction(transaction); err != nil {
+	if err := s.transactionRepo.CreateTransaction(ctx, transaction); err != nil {
 		return apperrors.Internal("transaction_create_failed", "failed to create transaction", err)
 	}
 
@@ -39,8 +41,8 @@ func (s *DefaultTransactionService) AddTransaction(transaction *models.Transacti
 }
 
 // GetTransactionsByUser retrieves all transactions for a user
-func (s *DefaultTransactionService) GetTransactionsByUser(userID uint) ([]models.Transaction, error) {
-	transactions, err := s.transactionRepo.GetTransactionsByUserID(userID)
+func (s *DefaultTransactionService) GetTransactionsByUser(ctx context.Context, userID uint) ([]models.Transaction, error) {
+	transactions, err := s.transactionRepo.GetTransactionsByUserID(ctx, userID)
 	if err != nil {
 		return nil, apperrors.Internal("transactions_fetch_failed", "failed to retrieve transactions", err)
 	}
@@ -49,8 +51,8 @@ func (s *DefaultTransactionService) GetTransactionsByUser(userID uint) ([]models
 }
 
 // DeleteTransactionForUser removes a transaction that belongs to the authenticated user.
-func (s *DefaultTransactionService) DeleteTransactionForUser(userID, transactionID uint) error {
-	transaction, err := s.transactionRepo.GetTransactionByID(transactionID)
+func (s *DefaultTransactionService) DeleteTransactionForUser(ctx context.Context, userID, transactionID uint) error {
+	transaction, err := s.transactionRepo.GetTransactionByID(ctx, transactionID)
 	if err != nil {
 		return apperrors.NotFound("transaction_not_found", "transaction not found")
 	}
@@ -59,7 +61,7 @@ func (s *DefaultTransactionService) DeleteTransactionForUser(userID, transaction
 		return apperrors.NotFound("transaction_not_found", "transaction not found")
 	}
 
-	if err := s.transactionRepo.DeleteTransaction(transactionID); err != nil {
+	if err := s.transactionRepo.DeleteTransaction(ctx, transactionID); err != nil {
 		return apperrors.Internal("transaction_delete_failed", "failed to delete transaction", err)
 	}
 

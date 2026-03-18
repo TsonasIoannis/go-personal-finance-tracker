@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -23,6 +24,7 @@ func setupBudgetTestDB(t *testing.T) *gorm.DB {
 func TestCreateBudget(t *testing.T) {
 	db := setupBudgetTestDB(t)
 	repo := NewGormBudgetRepository(db)
+	ctx := context.Background()
 
 	t.Run("Create valid budget", func(t *testing.T) {
 		budget := &models.Budget{
@@ -33,7 +35,7 @@ func TestCreateBudget(t *testing.T) {
 			EndDate:    time.Now().AddDate(0, 1, 0),
 		}
 
-		err := repo.CreateBudget(budget)
+		err := repo.CreateBudget(ctx, budget)
 		assert.NoError(t, err)
 
 		var retrievedBudget models.Budget
@@ -47,6 +49,7 @@ func TestCreateBudget(t *testing.T) {
 func TestGetBudgetByID(t *testing.T) {
 	db := setupBudgetTestDB(t)
 	repo := NewGormBudgetRepository(db)
+	ctx := context.Background()
 
 	t.Run("Retrieve existing budget", func(t *testing.T) {
 		budget := &models.Budget{
@@ -56,10 +59,10 @@ func TestGetBudgetByID(t *testing.T) {
 			StartDate:  time.Now(),
 			EndDate:    time.Now().AddDate(0, 1, 0),
 		}
-		err := repo.CreateBudget(budget)
+		err := repo.CreateBudget(ctx, budget)
 		assert.NoError(t, err)
 
-		foundBudget, err := repo.GetBudgetByID(budget.ID)
+		foundBudget, err := repo.GetBudgetByID(ctx, budget.ID)
 		assert.NoError(t, err)
 		assert.NotNil(t, foundBudget)
 		assert.Equal(t, budget.Limit, foundBudget.Limit)
@@ -67,7 +70,7 @@ func TestGetBudgetByID(t *testing.T) {
 
 	t.Run("Retrieve non-existent budget", func(t *testing.T) {
 		nonExistentID := uint(9999)
-		budget, err := repo.GetBudgetByID(nonExistentID)
+		budget, err := repo.GetBudgetByID(ctx, nonExistentID)
 
 		assert.Error(t, err)
 		assert.Nil(t, budget)
@@ -79,6 +82,7 @@ func TestGetBudgetByID(t *testing.T) {
 func TestGetBudgetsByUserID(t *testing.T) {
 	db := setupBudgetTestDB(t)
 	repo := NewGormBudgetRepository(db)
+	ctx := context.Background()
 
 	// Ensure a clean state before running the test
 	db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.Budget{})
@@ -98,18 +102,18 @@ func TestGetBudgetsByUserID(t *testing.T) {
 			StartDate:  time.Now(),
 			EndDate:    time.Now().AddDate(0, 1, 0),
 		}
-		err1 := repo.CreateBudget(budget1)
+		err1 := repo.CreateBudget(ctx, budget1)
 		assert.NoError(t, err1)
-		err2 := repo.CreateBudget(budget2)
+		err2 := repo.CreateBudget(ctx, budget2)
 		assert.NoError(t, err2)
 
-		budgets, err := repo.GetBudgetsByUserID(1)
+		budgets, err := repo.GetBudgetsByUserID(ctx, 1)
 		assert.NoError(t, err)
 		assert.Len(t, budgets, 2)
 	})
 
 	t.Run("User has no budgets", func(t *testing.T) {
-		budgets, err := repo.GetBudgetsByUserID(9999) // Non-existent user
+		budgets, err := repo.GetBudgetsByUserID(ctx, 9999) // Non-existent user
 		assert.NoError(t, err)
 		assert.Len(t, budgets, 0)
 	})
@@ -119,6 +123,7 @@ func TestGetBudgetsByUserID(t *testing.T) {
 func TestDeleteBudget(t *testing.T) {
 	db := setupBudgetTestDB(t)
 	repo := NewGormBudgetRepository(db)
+	ctx := context.Background()
 
 	t.Run("Delete existing budget", func(t *testing.T) {
 		budget := &models.Budget{
@@ -128,10 +133,10 @@ func TestDeleteBudget(t *testing.T) {
 			StartDate:  time.Now(),
 			EndDate:    time.Now().AddDate(0, 1, 0),
 		}
-		err1 := repo.CreateBudget(budget)
+		err1 := repo.CreateBudget(ctx, budget)
 		assert.NoError(t, err1)
 
-		err := repo.DeleteBudget(budget.ID)
+		err := repo.DeleteBudget(ctx, budget.ID)
 		assert.NoError(t, err)
 
 		var deletedBudget models.Budget
@@ -145,6 +150,7 @@ func TestDeleteBudget(t *testing.T) {
 func TestUpdateBudget(t *testing.T) {
 	db := setupBudgetTestDB(t)
 	repo := NewGormBudgetRepository(db)
+	ctx := context.Background()
 
 	// Ensure related entities exist
 	user := &models.User{Name: "Test User", Email: "test@example.com", Password: "hashedpassword"}
@@ -161,12 +167,12 @@ func TestUpdateBudget(t *testing.T) {
 			StartDate:  time.Now(),
 			EndDate:    time.Now().AddDate(0, 1, 0),
 		}
-		err1 := repo.CreateBudget(budget)
+		err1 := repo.CreateBudget(ctx, budget)
 		assert.NoError(t, err1)
 
 		// Update the budget
 		budget.Limit = 750.00
-		err := repo.UpdateBudget(budget)
+		err := repo.UpdateBudget(ctx, budget)
 		assert.NoError(t, err)
 
 		// Fetch updated budget
