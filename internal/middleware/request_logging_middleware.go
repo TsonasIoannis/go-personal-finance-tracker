@@ -7,6 +7,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/observability"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,20 +18,25 @@ func StructuredLoggerMiddleware(logger *slog.Logger) gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
+		requestID, _ := RequestIDFromGinContext(c)
+		path := c.Request.URL.Path
+		requestLogger := logger.With(
+			"request_id", requestID,
+			"method", c.Request.Method,
+			"path", path,
+		)
+		observability.SetLoggerOnGinContext(c, requestLogger)
+
 		start := time.Now()
 		c.Next()
 
-		requestID, _ := RequestIDFromGinContext(c)
-		path := c.Request.URL.Path
 		route := c.FullPath()
 		if route == "" {
 			route = path
 		}
 
+		requestLogger = observability.LoggerFromGinContext(c)
 		args := []any{
-			"request_id", requestID,
-			"method", c.Request.Method,
-			"path", path,
 			"route", route,
 			"status", c.Writer.Status(),
 			"latency_ms", time.Since(start).Milliseconds(),
@@ -44,11 +50,11 @@ func StructuredLoggerMiddleware(logger *slog.Logger) gin.HandlerFunc {
 
 		switch {
 		case c.Writer.Status() >= http.StatusInternalServerError:
-			logger.Error("request completed", args...)
+			requestLogger.Error("request completed", args...)
 		case c.Writer.Status() >= http.StatusBadRequest:
-			logger.Warn("request completed", args...)
+			requestLogger.Warn("request completed", args...)
 		default:
-			logger.Info("request completed", args...)
+			requestLogger.Info("request completed", args...)
 		}
 	}
 }
@@ -67,11 +73,17 @@ func RecoveryMiddleware(logger *slog.Logger) gin.HandlerFunc {
 			route = path
 		}
 
-		logger.Error(
-			"panic recovered",
+		requestLogger := logger.With(
 			"request_id", requestID,
 			"method", c.Request.Method,
 			"path", path,
+		)
+		if userID, exists := c.Get("userID"); exists {
+			requestLogger = requestLogger.With("user_id", userID)
+		}
+
+		requestLogger.Error(
+			"panic recovered",
 			"route", route,
 			"panic", recovered,
 			"stack_trace", string(debug.Stack()),

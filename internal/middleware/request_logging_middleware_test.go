@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/observability"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
@@ -45,6 +46,34 @@ func TestStructuredLoggerMiddleware(t *testing.T) {
 	assert.Equal(t, "/test", entry["route"])
 	assert.Equal(t, "integration-test", entry["user_agent"])
 	assert.Equal(t, float64(http.StatusCreated), entry["status"])
+}
+
+func TestStructuredLoggerMiddlewareIncludesEnrichedRequestFields(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
+
+	router := gin.New()
+	router.Use(RequestIDMiddleware(), StructuredLoggerMiddleware(logger))
+	router.GET("/test", func(c *gin.Context) {
+		observability.SetLoggerOnGinContext(c, observability.LoggerFromGinContext(c).With("user_id", uint(42)))
+		c.Status(http.StatusOK)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set(RequestIDHeader, "req-user")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var entry map[string]any
+	err := json.Unmarshal([]byte(strings.TrimSpace(logBuffer.String())), &entry)
+	assert.NoError(t, err)
+	assert.Equal(t, "req-user", entry["request_id"])
+	assert.Equal(t, float64(42), entry["user_id"])
 }
 
 func TestRecoveryMiddleware(t *testing.T) {
