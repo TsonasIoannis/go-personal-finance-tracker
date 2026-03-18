@@ -6,7 +6,6 @@ import (
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/config"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -40,7 +39,7 @@ func TestSetupTracingWithoutExporterUsesNoopProvider(t *testing.T) {
 		t.Fatal("expected background context span to remain invalid")
 	}
 
-	if _, ok := otel.GetTextMapPropagator().(propagation.TextMapPropagator); !ok {
+	if otel.GetTextMapPropagator() == nil {
 		t.Fatal("expected text map propagator to be configured")
 	}
 }

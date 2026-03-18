@@ -30,7 +30,9 @@ func TestTracingMiddlewareCreatesAnnotatedSpan(t *testing.T) {
 	defer func() {
 		otel.SetTracerProvider(previousProvider)
 		otel.SetTextMapPropagator(previousPropagator)
-		_ = provider.Shutdown(context.Background())
+		if err := provider.Shutdown(context.Background()); err != nil {
+			t.Fatalf("expected tracer provider shutdown to succeed, got %v", err)
+		}
 	}()
 
 	router := gin.New()
@@ -75,7 +77,7 @@ func TestTracingMiddlewareCreatesAnnotatedSpan(t *testing.T) {
 	assertStringAttribute(t, attributes, "http.request.method", http.MethodGet)
 	assertStringAttribute(t, attributes, "http.route", "/test")
 	assertInt64Attribute(t, attributes, "http.response.status_code", int64(http.StatusBadRequest))
-	assertInt64Attribute(t, attributes, "user.id", 42)
+	assertStringAttribute(t, attributes, "user.id", "42")
 
 	if !hasEvent(span.Events(), "exception") {
 		t.Fatal("expected tracing hooks to record an exception event")

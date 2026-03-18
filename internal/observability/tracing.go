@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
@@ -114,7 +115,7 @@ func SetAuthenticatedUser(ctx context.Context, userID uint) {
 		return
 	}
 
-	span.SetAttributes(attribute.Int64("user.id", int64(userID)))
+	span.SetAttributes(attribute.String("user.id", strconv.FormatUint(uint64(userID), 10)))
 	span.AddEvent("auth.user_authenticated")
 }
 

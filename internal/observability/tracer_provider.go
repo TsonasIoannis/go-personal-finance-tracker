@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 // SetupTracing configures global tracing. When no endpoint is configured, it keeps a noop provider.
@@ -18,7 +18,7 @@ func SetupTracing(ctx context.Context, cfg config.TracingConfig) (func(context.C
 	ConfigureTracing()
 
 	if strings.TrimSpace(cfg.Endpoint) == "" {
-		otel.SetTracerProvider(trace.NewNoopTracerProvider())
+		otel.SetTracerProvider(noop.NewTracerProvider())
 		return func(context.Context) error { return nil }, nil
 	}
 
