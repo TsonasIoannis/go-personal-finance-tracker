@@ -2,7 +2,7 @@ package database
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -45,7 +45,7 @@ func (p *PostgresDatabase) Connect() error {
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetConnMaxLifetime(5 * time.Minute)
 
-	log.Println("Database connection established.")
+	slog.Info("database connection established")
 	return nil
 }
 
@@ -70,7 +70,7 @@ func (p *PostgresDatabase) CheckConnection() error {
 		return fmt.Errorf("database is unreachable: %v", err)
 	}
 
-	log.Println("Database connection is active.")
+	slog.Info("database connection is active")
 	return nil
 }
 
@@ -98,6 +98,6 @@ func (p *PostgresDatabase) Migrate() error {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
-	log.Println("Database migrations applied successfully.")
+	slog.Info("database migrations applied successfully")
 	return nil
 }

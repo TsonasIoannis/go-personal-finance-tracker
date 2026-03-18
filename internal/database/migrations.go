@@ -2,7 +2,7 @@ package database
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"gorm.io/gorm"
 )
@@ -167,7 +167,7 @@ func ApplyMigrations(db *gorm.DB) error {
 			return fmt.Errorf("apply migration %s: %w", migration.version, err)
 		}
 
-		log.Printf("Applied migration %s (%s)", migration.version, migration.name)
+		slog.Info("applied migration", "version", migration.version, "name", migration.name)
 	}
 
 	return nil

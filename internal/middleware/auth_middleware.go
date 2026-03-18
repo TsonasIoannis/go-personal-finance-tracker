@@ -6,6 +6,7 @@ import (
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/auth"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/httpapi"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/observability"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,6 +32,8 @@ func AuthMiddleware(tokenManager auth.TokenManager) gin.HandlerFunc {
 
 		c.Set("userID", claims.UserID)
 		c.Set("userEmail", claims.Email)
+		observability.SetLoggerOnGinContext(c, observability.LoggerFromGinContext(c).With("user_id", claims.UserID))
+		observability.SetAuthenticatedUser(c.Request.Context(), claims.UserID)
 		c.Next()
 	}
 }
