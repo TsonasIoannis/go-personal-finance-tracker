@@ -10,6 +10,7 @@ import (
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/handlers"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/middleware"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/observability"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/persistence"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/routes"
 	services "github.com/TsonasIoannis/go-personal-finance-tracker/internal/services/default"
@@ -30,10 +31,13 @@ func NewHTTPServer(cfg config.Config, db database.Database, repositories persist
 }
 
 func newRouter(cfg config.Config, db database.Database, repositories persistence.Repositories) *gin.Engine {
+	metrics := observability.NewHTTPMetrics()
+
 	router := gin.New()
 	router.Use(
 		middleware.RequestIDMiddleware(),
 		middleware.StructuredLoggerMiddleware(slog.Default()),
+		metrics.Middleware(),
 		middleware.RecoveryMiddleware(slog.Default()),
 	)
 
@@ -50,6 +54,7 @@ func newRouter(cfg config.Config, db database.Database, repositories persistence
 
 	routes.SetupRoutes(router, authMiddleware, userController, transactionController, budgetController)
 
+	router.GET("/metrics", gin.WrapH(metrics.Handler()))
 	router.GET("/health", handlers.HealthCheckHandler)
 	router.GET("/ready", handlers.ReadinessCheckHandler(db))
 	router.GET("/", func(c *gin.Context) {
