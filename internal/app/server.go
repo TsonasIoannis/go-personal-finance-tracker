@@ -30,7 +30,7 @@ func NewHTTPServer(cfg config.Config, db database.Database, repositories persist
 
 func newRouter(cfg config.Config, db database.Database, repositories persistence.Repositories) *gin.Engine {
 	router := gin.New()
-	router.Use(gin.Logger(), gin.Recovery())
+	router.Use(middleware.RequestIDMiddleware(), gin.Logger(), gin.Recovery())
 
 	tokenManager := auth.NewJWTManager(cfg.JWTSecret, cfg.Auth.TokenTTL)
 	authMiddleware := middleware.AuthMiddleware(tokenManager)
