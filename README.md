@@ -132,6 +132,24 @@ curl http://localhost:8080/ready
 curl http://localhost:8080/metrics
 ```
 
+### Optional Observability Profile
+
+You can also run an OTLP collector plus Jaeger to simulate a more production-like tracing setup locally without making it part of the default stack.
+
+PowerShell:
+
+```powershell
+$env:OTEL_SERVICE_NAME="go-personal-finance-tracker"
+$env:OTEL_EXPORTER_OTLP_ENDPOINT="http://otel-collector:4318"
+$env:OTEL_EXPORTER_OTLP_INSECURE="true"
+$env:OTEL_TRACES_SAMPLER_ARG="0.25"
+docker compose --profile observability up --build
+```
+
+Then open Jaeger at `http://localhost:16686` and search for traces from `go-personal-finance-tracker`.
+
+If you want to go back to the normal lightweight local stack, unset `OTEL_EXPORTER_OTLP_ENDPOINT` and run plain `docker compose up --build`.
+
 ## Run Locally Without Docker For The App
 
 You can still use Docker for PostgreSQL and run the Go process directly.

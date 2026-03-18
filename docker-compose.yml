@@ -12,6 +12,10 @@ services:
       - DATABASE_URL=postgres://user:password@db:5432/personal_finance_db?sslmode=disable
       - JWT_SECRET=dev-secret-for-docker
       - PORT=8080
+      - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-go-personal-finance-tracker}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      - OTEL_EXPORTER_OTLP_INSECURE=${OTEL_EXPORTER_OTLP_INSECURE:-false}
+      - OTEL_TRACES_SAMPLER_ARG=${OTEL_TRACES_SAMPLER_ARG:-1.0}
 
   db:
     image: postgres:17
@@ -30,6 +34,39 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.121.0
+    container_name: personal-finance-otel-collector
+    restart: always
+    profiles:
+      - observability
+    command:
+      - "--config=/etc/otelcol/config.yaml"
+    volumes:
+      - ./deploy/otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    depends_on:
+      jaeger:
+        condition: service_started
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    healthcheck:
+      test: ["CMD", "/otelcol-contrib", "--config=/etc/otelcol/config.yaml", "--dry-run"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.61.0
+    container_name: personal-finance-jaeger
+    restart: always
+    profiles:
+      - observability
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"
 
 volumes:
   postgres_data:
