@@ -25,6 +25,7 @@ It demonstrates:
 - explicit HTTP server timeouts and graceful shutdown
 - versioned startup migrations with a separate persistence bootstrap
 - readiness and health endpoints
+- request IDs, structured logs, Prometheus metrics, and OpenTelemetry tracing hooks
 - Docker-based and native local startup
 - a passing `go test ./...` suite
 
@@ -46,6 +47,7 @@ It demonstrates:
 | POST   | `/login`    | Authenticate a user and return a token |
 | GET    | `/health`   | Liveness probe                         |
 | GET    | `/ready`    | Readiness probe backed by the database |
+| GET    | `/metrics`  | Prometheus metrics endpoint            |
 
 ### Protected
 
@@ -101,6 +103,15 @@ Optional runtime tuning:
 | `HTTP_SHUTDOWN_TIMEOUT`    | No       | Grace period for graceful shutdown    | `10s`   |
 | `AUTH_TOKEN_TTL`           | No       | Signed token lifetime                 | `24h`   |
 
+Optional tracing:
+
+| Variable                      | Required | Description                                                    | Default                       |
+| ----------------------------- | -------- | -------------------------------------------------------------- | ----------------------------- |
+| `OTEL_SERVICE_NAME`           | No       | Service name attached to exported traces                       | `go-personal-finance-tracker` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | No       | OTLP/HTTP endpoint for trace export. If empty, tracing is noop | unset                         |
+| `OTEL_EXPORTER_OTLP_INSECURE` | No       | Use insecure OTLP transport for non-TLS collectors             | `false`                       |
+| `OTEL_TRACES_SAMPLER_ARG`     | No       | Trace sampling ratio between `0` and `1`                       | `1.0`                         |
+
 An example file is included at [.env.example](c:/Users/Trelobarbouni/Documents/GitHub/go-personal-finance-tracker/.env.example).
 
 ## Run With Docker
@@ -118,6 +129,7 @@ Then verify the service:
 ```sh
 curl http://localhost:8080/health
 curl http://localhost:8080/ready
+curl http://localhost:8080/metrics
 ```
 
 ## Run Locally Without Docker For The App
@@ -136,6 +148,7 @@ docker-compose up -d db
 $env:DATABASE_URL="postgres://user:password@localhost:5432/personal_finance_db?sslmode=disable"
 $env:JWT_SECRET="dev-secret"
 $env:PORT="8080"
+$env:OTEL_EXPORTER_OTLP_ENDPOINT=""
 ```
 
 3. Run the API:
@@ -145,6 +158,26 @@ go run .\cmd\main.go
 ```
 
 The application now fails fast when required configuration is missing and shuts down gracefully on `Ctrl+C` or `SIGTERM`.
+
+## Observability
+
+The API includes a small observability baseline:
+
+- Every request gets an `X-Request-ID` header. If the client sends one, the API reuses it.
+- Request logs are structured JSON and include request ID, route, status, latency, and trace IDs when tracing is enabled.
+- `/metrics` exposes Prometheus-format HTTP metrics.
+- OpenTelemetry tracing is instrumented in the request pipeline and exports spans when `OTEL_EXPORTER_OTLP_ENDPOINT` is configured.
+
+Example local tracing setup against an OTLP HTTP collector on port `4318`:
+
+```powershell
+$env:OTEL_SERVICE_NAME="go-personal-finance-tracker"
+$env:OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+$env:OTEL_EXPORTER_OTLP_INSECURE="true"
+$env:OTEL_TRACES_SAMPLER_ARG="0.25"
+```
+
+If `OTEL_EXPORTER_OTLP_ENDPOINT` is left empty, the tracing hooks remain in place but the process uses a noop tracer provider.
 
 ## Quick API Walkthrough
 

@@ -20,7 +20,6 @@ import (
 
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
-	observability.ConfigureTracing()
 
 	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
 		if err := runHealthcheck(); err != nil {
@@ -42,6 +41,19 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("configuration initialization failed: %w", err)
 	}
+
+	shutdownTracing, err := observability.SetupTracing(context.Background(), cfg.Tracing)
+	if err != nil {
+		return fmt.Errorf("tracing initialization failed: %w", err)
+	}
+	defer func() {
+		if shutdownTracing == nil {
+			return
+		}
+		if err := shutdownTracing(context.Background()); err != nil {
+			slog.Error("tracing shutdown failed", "error", err)
+		}
+	}()
 
 	db := database.NewPostgresDatabase(cfg.DatabaseURL)
 	if err := db.Connect(); err != nil {
@@ -86,6 +98,11 @@ func run() error {
 	if err := server.Shutdown(gracefulShutdownContext); err != nil {
 		slog.Error("graceful shutdown failed", "error", err)
 	}
+
+	if err := shutdownTracing(gracefulShutdownContext); err != nil {
+		slog.Error("tracing shutdown failed", "error", err)
+	}
+	shutdownTracing = nil
 
 	slog.Info("server shutdown complete")
 	return nil

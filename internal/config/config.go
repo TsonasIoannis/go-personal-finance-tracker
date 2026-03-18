@@ -17,6 +17,8 @@ const (
 	defaultIdleTimeout       = 60 * time.Second
 	defaultShutdownTimeout   = 10 * time.Second
 	defaultTokenTTL          = 24 * time.Hour
+	defaultServiceName       = "go-personal-finance-tracker"
+	defaultTraceSampleRatio  = 1.0
 )
 
 type Config struct {
@@ -25,6 +27,7 @@ type Config struct {
 	Port        string
 	HTTP        HTTPConfig
 	Auth        AuthConfig
+	Tracing     TracingConfig
 }
 
 type HTTPConfig struct {
@@ -37,6 +40,13 @@ type HTTPConfig struct {
 
 type AuthConfig struct {
 	TokenTTL time.Duration
+}
+
+type TracingConfig struct {
+	ServiceName string
+	Endpoint    string
+	Insecure    bool
+	SampleRatio float64
 }
 
 func Load() (Config, error) {
@@ -87,6 +97,26 @@ func Load() (Config, error) {
 		errs = append(errs, err)
 	}
 
+	serviceName, err := stringValueEnv("OTEL_SERVICE_NAME", defaultServiceName)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	tracingEndpoint, err := optionalStringEnv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	tracingInsecure, err := boolEnv("OTEL_EXPORTER_OTLP_INSECURE", false)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	traceSampleRatio, err := floatEnv("OTEL_TRACES_SAMPLER_ARG", defaultTraceSampleRatio)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
 	if len(errs) > 0 {
 		return Config{}, errors.Join(errs...)
 	}
@@ -104,6 +134,12 @@ func Load() (Config, error) {
 		},
 		Auth: AuthConfig{
 			TokenTTL: tokenTTL,
+		},
+		Tracing: TracingConfig{
+			ServiceName: serviceName,
+			Endpoint:    tracingEndpoint,
+			Insecure:    tracingInsecure,
+			SampleRatio: traceSampleRatio,
 		},
 	}, nil
 }
@@ -132,6 +168,51 @@ func stringEnv(key, fallback string) (string, error) {
 	}
 
 	return value, nil
+}
+
+func stringValueEnv(key, fallback string) (string, error) {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		value = fallback
+	}
+
+	return value, nil
+}
+
+func optionalStringEnv(key string) (string, error) {
+	return strings.TrimSpace(os.Getenv(key)), nil
+}
+
+func boolEnv(key string, fallback bool) (bool, error) {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback, nil
+	}
+
+	parsed, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, fmt.Errorf("%s must be a valid boolean: %w", key, err)
+	}
+
+	return parsed, nil
+}
+
+func floatEnv(key string, fallback float64) (float64, error) {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback, nil
+	}
+
+	parsed, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return 0, fmt.Errorf("%s must be a valid float: %w", key, err)
+	}
+
+	if parsed < 0 || parsed > 1 {
+		return 0, fmt.Errorf("%s must be between 0 and 1", key)
+	}
+
+	return parsed, nil
 }
 
 func durationEnv(key string, fallback time.Duration) (time.Duration, error) {
