@@ -52,7 +52,13 @@ services:
       - "4317:4317"
       - "4318:4318"
     healthcheck:
-      test: ["CMD", "/otelcol-contrib", "--config=/etc/otelcol/config.yaml", "--dry-run"]
+      test:
+        [
+          "CMD",
+          "/otelcol-contrib",
+          "--config=/etc/otelcol/config.yaml",
+          "--dry-run",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
