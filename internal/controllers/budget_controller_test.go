@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -20,23 +21,23 @@ type MockBudgetService struct {
 	mock.Mock
 }
 
-func (m *MockBudgetService) CreateBudget(budget *models.Budget) error {
-	args := m.Called(budget)
+func (m *MockBudgetService) CreateBudget(ctx context.Context, budget *models.Budget) error {
+	args := m.Called(ctx, budget)
 	return args.Error(0)
 }
 
-func (m *MockBudgetService) GetBudgetsByUser(userID uint) ([]models.Budget, error) {
-	args := m.Called(userID)
+func (m *MockBudgetService) GetBudgetsByUser(ctx context.Context, userID uint) ([]models.Budget, error) {
+	args := m.Called(ctx, userID)
 	return args.Get(0).([]models.Budget), args.Error(1)
 }
 
-func (m *MockBudgetService) DeleteBudgetForUser(userID, budgetID uint) error {
-	args := m.Called(userID, budgetID)
+func (m *MockBudgetService) DeleteBudgetForUser(ctx context.Context, userID, budgetID uint) error {
+	args := m.Called(ctx, userID, budgetID)
 	return args.Error(0)
 }
 
-func (m *MockBudgetService) UpdateBudget(budget *models.Budget) error {
-	args := m.Called(budget)
+func (m *MockBudgetService) UpdateBudget(ctx context.Context, budget *models.Budget) error {
+	args := m.Called(ctx, budget)
 	return args.Error(0)
 }
 
@@ -56,7 +57,7 @@ func TestCreateBudget(t *testing.T) {
 			"end_date":    endDate.Format(time.RFC3339),
 		}
 
-		mockService.On("CreateBudget", mock.MatchedBy(func(b *models.Budget) bool {
+		mockService.On("CreateBudget", mock.Anything, mock.MatchedBy(func(b *models.Budget) bool {
 			return b.UserID == 1 &&
 				b.CategoryID == 2 &&
 				b.Limit == 1000 &&
@@ -91,7 +92,7 @@ func TestCreateBudget(t *testing.T) {
 			"end_date":    now.AddDate(0, 1, 0).Format(time.RFC3339),
 		}
 
-		mockService.On("CreateBudget", mock.AnythingOfType("*models.Budget")).
+		mockService.On("CreateBudget", mock.Anything, mock.AnythingOfType("*models.Budget")).
 			Return(apperrors.Validation("invalid_budget_limit", "budget limit must be greater than zero")).Once()
 
 		w := httptest.NewRecorder()
@@ -123,7 +124,7 @@ func TestCreateBudget(t *testing.T) {
 			"end_date":    endDate.Format(time.RFC3339),
 		}
 
-		mockService.On("CreateBudget", mock.AnythingOfType("*models.Budget")).
+		mockService.On("CreateBudget", mock.Anything, mock.AnythingOfType("*models.Budget")).
 			Return(apperrors.Validation("invalid_budget_date_range", "start date cannot be after end date")).Once()
 
 		w := httptest.NewRecorder()
@@ -175,7 +176,7 @@ func TestGetBudgets(t *testing.T) {
 			{UserID: 1, CategoryID: 3, Limit: 500, StartDate: now, EndDate: now.AddDate(0, 2, 0)},
 		}
 
-		mockService.On("GetBudgetsByUser", uint(1)).Return(expectedBudgets, nil).Once()
+		mockService.On("GetBudgetsByUser", mock.Anything, uint(1)).Return(expectedBudgets, nil).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -195,7 +196,7 @@ func TestGetBudgets(t *testing.T) {
 		mockService := new(MockBudgetService)
 		controller := NewBudgetController(mockService)
 
-		mockService.On("GetBudgetsByUser", uint(1)).
+		mockService.On("GetBudgetsByUser", mock.Anything, uint(1)).
 			Return([]models.Budget(nil), apperrors.Internal("budgets_fetch_failed", "failed to retrieve budgets", nil)).Once()
 
 		w := httptest.NewRecorder()
@@ -218,7 +219,7 @@ func TestDeleteBudget(t *testing.T) {
 		mockService := new(MockBudgetService)
 		controller := NewBudgetController(mockService)
 
-		mockService.On("DeleteBudgetForUser", uint(1), uint(1)).Return(nil).Once()
+		mockService.On("DeleteBudgetForUser", mock.Anything, uint(1), uint(1)).Return(nil).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -253,7 +254,7 @@ func TestDeleteBudget(t *testing.T) {
 		mockService := new(MockBudgetService)
 		controller := NewBudgetController(mockService)
 
-		mockService.On("DeleteBudgetForUser", uint(1), uint(1)).
+		mockService.On("DeleteBudgetForUser", mock.Anything, uint(1), uint(1)).
 			Return(apperrors.NotFound("budget_not_found", "budget not found")).Once()
 
 		w := httptest.NewRecorder()

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -16,37 +17,38 @@ type MockBudgetRepository struct {
 	mock.Mock
 }
 
-func (m *MockBudgetRepository) CreateBudget(budget *models.Budget) error {
-	args := m.Called(budget)
+func (m *MockBudgetRepository) CreateBudget(ctx context.Context, budget *models.Budget) error {
+	args := m.Called(ctx, budget)
 	return args.Error(0)
 }
 
-func (m *MockBudgetRepository) GetBudgetByID(id uint) (*models.Budget, error) {
-	args := m.Called(id)
+func (m *MockBudgetRepository) GetBudgetByID(ctx context.Context, id uint) (*models.Budget, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) != nil {
 		return args.Get(0).(*models.Budget), args.Error(1)
 	}
 	return nil, args.Error(1)
 }
 
-func (m *MockBudgetRepository) GetBudgetsByUserID(userID uint) ([]models.Budget, error) {
-	args := m.Called(userID)
+func (m *MockBudgetRepository) GetBudgetsByUserID(ctx context.Context, userID uint) ([]models.Budget, error) {
+	args := m.Called(ctx, userID)
 	return args.Get(0).([]models.Budget), args.Error(1)
 }
 
-func (m *MockBudgetRepository) UpdateBudget(budget *models.Budget) error {
-	args := m.Called(budget)
+func (m *MockBudgetRepository) UpdateBudget(ctx context.Context, budget *models.Budget) error {
+	args := m.Called(ctx, budget)
 	return args.Error(0)
 }
 
-func (m *MockBudgetRepository) DeleteBudget(id uint) error {
-	args := m.Called(id)
+func (m *MockBudgetRepository) DeleteBudget(ctx context.Context, id uint) error {
+	args := m.Called(ctx, id)
 	return args.Error(0)
 }
 
 func TestCreateBudget(t *testing.T) {
 	mockRepo := new(MockBudgetRepository)
 	service := NewBudgetService(mockRepo)
+	ctx := context.Background()
 
 	t.Run("Create valid budget", func(t *testing.T) {
 		budget := &models.Budget{
@@ -57,9 +59,9 @@ func TestCreateBudget(t *testing.T) {
 			EndDate:    time.Now().AddDate(0, 1, 0),
 		}
 
-		mockRepo.On("CreateBudget", budget).Return(nil)
+		mockRepo.On("CreateBudget", ctx, budget).Return(nil)
 
-		err := service.CreateBudget(budget)
+		err := service.CreateBudget(ctx, budget)
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
 	})
@@ -73,7 +75,7 @@ func TestCreateBudget(t *testing.T) {
 			EndDate:    time.Now().AddDate(0, 1, 0),
 		}
 
-		err := service.CreateBudget(budget)
+		err := service.CreateBudget(ctx, budget)
 		assert.Error(t, err)
 		assert.Equal(t, "budget limit must be greater than zero", err.Error())
 		assert.True(t, isAppErrorKind(err, apperrors.KindValidation))
@@ -89,7 +91,7 @@ func TestCreateBudget(t *testing.T) {
 			EndDate:    time.Now(),
 		}
 
-		err := service.CreateBudget(budget)
+		err := service.CreateBudget(ctx, budget)
 		assert.Error(t, err)
 		assert.Equal(t, "start date cannot be after end date", err.Error())
 		assert.True(t, isAppErrorKind(err, apperrors.KindValidation))
@@ -100,6 +102,7 @@ func TestCreateBudget(t *testing.T) {
 func TestUpdateBudget(t *testing.T) {
 	mockRepo := new(MockBudgetRepository)
 	service := NewBudgetService(mockRepo)
+	ctx := context.Background()
 
 	t.Run("Update existing budget", func(t *testing.T) {
 		budget := &models.Budget{
@@ -111,9 +114,9 @@ func TestUpdateBudget(t *testing.T) {
 			EndDate:    time.Now().AddDate(0, 1, 0),
 		}
 
-		mockRepo.On("UpdateBudget", budget).Return(nil)
+		mockRepo.On("UpdateBudget", ctx, budget).Return(nil)
 
-		err := service.UpdateBudget(budget)
+		err := service.UpdateBudget(ctx, budget)
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
 	})
@@ -128,7 +131,7 @@ func TestUpdateBudget(t *testing.T) {
 			EndDate:    time.Now().AddDate(0, 1, 0),
 		}
 
-		err := service.UpdateBudget(budget)
+		err := service.UpdateBudget(ctx, budget)
 		assert.Error(t, err)
 		assert.Equal(t, "budget limit must be positive", err.Error())
 		assert.True(t, isAppErrorKind(err, apperrors.KindValidation))
@@ -145,7 +148,7 @@ func TestUpdateBudget(t *testing.T) {
 			EndDate:    time.Now(),
 		}
 
-		err := service.UpdateBudget(budget)
+		err := service.UpdateBudget(ctx, budget)
 		assert.Error(t, err)
 		assert.Equal(t, "start date cannot be after end date", err.Error())
 		assert.True(t, isAppErrorKind(err, apperrors.KindValidation))
@@ -156,6 +159,7 @@ func TestUpdateBudget(t *testing.T) {
 func TestGetBudgetsByUser(t *testing.T) {
 	mockRepo := new(MockBudgetRepository)
 	service := NewBudgetService(mockRepo)
+	ctx := context.Background()
 
 	t.Run("Retrieve budgets for user", func(t *testing.T) {
 		budgets := []models.Budget{
@@ -163,18 +167,18 @@ func TestGetBudgetsByUser(t *testing.T) {
 			{ID: 2, UserID: 1, CategoryID: 3, Limit: 500},
 		}
 
-		mockRepo.On("GetBudgetsByUserID", uint(1)).Return(budgets, nil)
+		mockRepo.On("GetBudgetsByUserID", ctx, uint(1)).Return(budgets, nil)
 
-		result, err := service.GetBudgetsByUser(1)
+		result, err := service.GetBudgetsByUser(ctx, 1)
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
 		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("Retrieve budgets for user with no budgets", func(t *testing.T) {
-		mockRepo.On("GetBudgetsByUserID", uint(999)).Return([]models.Budget{}, nil)
+		mockRepo.On("GetBudgetsByUserID", ctx, uint(999)).Return([]models.Budget{}, nil)
 
-		result, err := service.GetBudgetsByUser(999)
+		result, err := service.GetBudgetsByUser(ctx, 999)
 		assert.NoError(t, err)
 		assert.Len(t, result, 0)
 		mockRepo.AssertExpectations(t)
@@ -184,20 +188,21 @@ func TestGetBudgetsByUser(t *testing.T) {
 func TestDeleteBudget(t *testing.T) {
 	mockRepo := new(MockBudgetRepository)
 	service := NewBudgetService(mockRepo)
+	ctx := context.Background()
 
 	t.Run("Delete existing budget", func(t *testing.T) {
-		mockRepo.On("GetBudgetByID", uint(1)).Return(&models.Budget{ID: 1, UserID: 1}, nil)
-		mockRepo.On("DeleteBudget", uint(1)).Return(nil)
+		mockRepo.On("GetBudgetByID", ctx, uint(1)).Return(&models.Budget{ID: 1, UserID: 1}, nil)
+		mockRepo.On("DeleteBudget", ctx, uint(1)).Return(nil)
 
-		err := service.DeleteBudgetForUser(1, 1)
+		err := service.DeleteBudgetForUser(ctx, 1, 1)
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("Fail to delete non-existent budget", func(t *testing.T) {
-		mockRepo.On("GetBudgetByID", uint(9999)).Return(nil, errors.New("budget not found"))
+		mockRepo.On("GetBudgetByID", ctx, uint(9999)).Return(nil, errors.New("budget not found"))
 
-		err := service.DeleteBudgetForUser(1, 9999)
+		err := service.DeleteBudgetForUser(ctx, 1, 9999)
 		assert.Error(t, err)
 		assert.Equal(t, "budget not found", err.Error())
 		assert.True(t, isAppErrorKind(err, apperrors.KindNotFound))
@@ -205,9 +210,9 @@ func TestDeleteBudget(t *testing.T) {
 	})
 
 	t.Run("Fail to delete another user's budget", func(t *testing.T) {
-		mockRepo.On("GetBudgetByID", uint(2)).Return(&models.Budget{ID: 2, UserID: 99}, nil)
+		mockRepo.On("GetBudgetByID", ctx, uint(2)).Return(&models.Budget{ID: 2, UserID: 99}, nil)
 
-		err := service.DeleteBudgetForUser(1, 2)
+		err := service.DeleteBudgetForUser(ctx, 1, 2)
 		assert.Error(t, err)
 		assert.Equal(t, "budget not found", err.Error())
 		assert.True(t, isAppErrorKind(err, apperrors.KindNotFound))

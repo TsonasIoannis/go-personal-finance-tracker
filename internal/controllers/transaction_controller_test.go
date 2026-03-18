@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -20,18 +21,18 @@ type MockTransactionService struct {
 	mock.Mock
 }
 
-func (m *MockTransactionService) AddTransaction(t *models.Transaction) error {
-	args := m.Called(t)
+func (m *MockTransactionService) AddTransaction(ctx context.Context, t *models.Transaction) error {
+	args := m.Called(ctx, t)
 	return args.Error(0)
 }
 
-func (m *MockTransactionService) GetTransactionsByUser(userID uint) ([]models.Transaction, error) {
-	args := m.Called(userID)
+func (m *MockTransactionService) GetTransactionsByUser(ctx context.Context, userID uint) ([]models.Transaction, error) {
+	args := m.Called(ctx, userID)
 	return args.Get(0).([]models.Transaction), args.Error(1)
 }
 
-func (m *MockTransactionService) DeleteTransactionForUser(userID, transactionID uint) error {
-	args := m.Called(userID, transactionID)
+func (m *MockTransactionService) DeleteTransactionForUser(ctx context.Context, userID, transactionID uint) error {
+	args := m.Called(ctx, userID, transactionID)
 	return args.Error(0)
 }
 
@@ -51,7 +52,7 @@ func TestCreateTransaction(t *testing.T) {
 			"note":        "Lunch",
 		}
 
-		mockService.On("AddTransaction", mock.MatchedBy(func(t *models.Transaction) bool {
+		mockService.On("AddTransaction", mock.Anything, mock.MatchedBy(func(t *models.Transaction) bool {
 			return t.UserID == 1 &&
 				t.Amount == 50.0 &&
 				t.CategoryID == 2 &&
@@ -87,7 +88,7 @@ func TestCreateTransaction(t *testing.T) {
 			"date":        now.Format(time.RFC3339),
 		}
 
-		mockService.On("AddTransaction", mock.AnythingOfType("*models.Transaction")).
+		mockService.On("AddTransaction", mock.Anything, mock.AnythingOfType("*models.Transaction")).
 			Return(apperrors.Validation("budget_limit_exceeded", "transaction exceeds budget limit")).Once()
 
 		w := httptest.NewRecorder()
@@ -139,7 +140,7 @@ func TestGetTransactions(t *testing.T) {
 			{UserID: 1, Amount: 100.0, CategoryID: 2, Type: "income", Date: now, Note: "Salary"},
 		}
 
-		mockService.On("GetTransactionsByUser", uint(1)).Return(transactions, nil).Once()
+		mockService.On("GetTransactionsByUser", mock.Anything, uint(1)).Return(transactions, nil).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -159,7 +160,7 @@ func TestGetTransactions(t *testing.T) {
 		mockService := new(MockTransactionService)
 		controller := NewTransactionController(mockService)
 
-		mockService.On("GetTransactionsByUser", uint(1)).
+		mockService.On("GetTransactionsByUser", mock.Anything, uint(1)).
 			Return([]models.Transaction(nil), apperrors.Internal("transactions_fetch_failed", "failed to retrieve transactions", nil)).Once()
 
 		w := httptest.NewRecorder()
@@ -182,7 +183,7 @@ func TestDeleteTransaction(t *testing.T) {
 		mockService := new(MockTransactionService)
 		controller := NewTransactionController(mockService)
 
-		mockService.On("DeleteTransactionForUser", uint(1), uint(1)).Return(nil).Once()
+		mockService.On("DeleteTransactionForUser", mock.Anything, uint(1), uint(1)).Return(nil).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -217,7 +218,7 @@ func TestDeleteTransaction(t *testing.T) {
 		mockService := new(MockTransactionService)
 		controller := NewTransactionController(mockService)
 
-		mockService.On("DeleteTransactionForUser", uint(1), uint(1)).
+		mockService.On("DeleteTransactionForUser", mock.Anything, uint(1), uint(1)).
 			Return(apperrors.NotFound("transaction_not_found", "transaction not found")).Once()
 
 		w := httptest.NewRecorder()

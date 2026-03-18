@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"testing"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
@@ -22,10 +23,11 @@ func setupCategoryTestDB(t *testing.T) *gorm.DB {
 func TestCreateCategory(t *testing.T) {
 	db := setupCategoryTestDB(t)
 	repo := NewCategoryRepository(db)
+	ctx := context.Background()
 
 	t.Run("Create valid category", func(t *testing.T) {
 		category := &models.Category{Name: "Groceries", Description: "Food and drinks"}
-		err := repo.CreateCategory(category)
+		err := repo.CreateCategory(ctx, category)
 		assert.NoError(t, err)
 
 		var retrievedCategory models.Category
@@ -38,10 +40,10 @@ func TestCreateCategory(t *testing.T) {
 		category1 := &models.Category{Name: "Health", Description: "Medical expenses"}
 		category2 := &models.Category{Name: "Health", Description: "Duplicate category"}
 
-		err := repo.CreateCategory(category1)
+		err := repo.CreateCategory(ctx, category1)
 		assert.NoError(t, err)
 
-		err = repo.CreateCategory(category2) // Should fail due to unique constraint
+		err = repo.CreateCategory(ctx, category2) // Should fail due to unique constraint
 		assert.Error(t, err)
 	})
 }
@@ -50,20 +52,21 @@ func TestCreateCategory(t *testing.T) {
 func TestGetCategoryByID(t *testing.T) {
 	db := setupCategoryTestDB(t)
 	repo := NewCategoryRepository(db)
+	ctx := context.Background()
 
 	t.Run("Retrieve existing category", func(t *testing.T) {
 		category := &models.Category{Name: "Utilities", Description: "Electricity, water, gas"}
-		err := repo.CreateCategory(category)
+		err := repo.CreateCategory(ctx, category)
 		assert.NoError(t, err)
 
-		foundCategory, err := repo.GetCategoryByID(category.ID)
+		foundCategory, err := repo.GetCategoryByID(ctx, category.ID)
 		assert.NoError(t, err)
 		assert.NotNil(t, foundCategory)
 		assert.Equal(t, category.Name, foundCategory.Name)
 	})
 
 	t.Run("Retrieve non-existent category", func(t *testing.T) {
-		category, err := repo.GetCategoryByID(9999) // Non-existent ID
+		category, err := repo.GetCategoryByID(ctx, 9999) // Non-existent ID
 		assert.Error(t, err)
 		assert.Nil(t, category)
 		assert.Equal(t, gorm.ErrRecordNotFound, err)
@@ -74,23 +77,24 @@ func TestGetCategoryByID(t *testing.T) {
 func TestGetAllCategories(t *testing.T) {
 	db := setupCategoryTestDB(t)
 	repo := NewCategoryRepository(db)
+	ctx := context.Background()
 
 	t.Run("Retrieve multiple categories", func(t *testing.T) {
 		category1 := &models.Category{Name: "Education", Description: "School and learning"}
 		category2 := &models.Category{Name: "Entertainment", Description: "Movies, concerts"}
-		err1 := repo.CreateCategory(category1)
+		err1 := repo.CreateCategory(ctx, category1)
 		assert.NoError(t, err1)
-		err2 := repo.CreateCategory(category2)
+		err2 := repo.CreateCategory(ctx, category2)
 		assert.NoError(t, err2)
 
-		categories, err := repo.GetAllCategories()
+		categories, err := repo.GetAllCategories(ctx)
 		assert.NoError(t, err)
 		assert.Len(t, categories, 2)
 	})
 
 	t.Run("Retrieve categories when none exist", func(t *testing.T) {
 		db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.Category{}) // Ensure no data
-		categories, err := repo.GetAllCategories()
+		categories, err := repo.GetAllCategories(ctx)
 
 		assert.NoError(t, err)
 		assert.Len(t, categories, 0)
@@ -101,13 +105,14 @@ func TestGetAllCategories(t *testing.T) {
 func TestDeleteCategory(t *testing.T) {
 	db := setupCategoryTestDB(t)
 	repo := NewCategoryRepository(db)
+	ctx := context.Background()
 
 	t.Run("Delete existing category", func(t *testing.T) {
 		category := &models.Category{Name: "Gaming", Description: "Video games"}
-		err1 := repo.CreateCategory(category)
+		err1 := repo.CreateCategory(ctx, category)
 		assert.NoError(t, err1)
 
-		err := repo.DeleteCategory(category.ID)
+		err := repo.DeleteCategory(ctx, category.ID)
 		assert.NoError(t, err)
 
 		var deletedCategory models.Category
@@ -117,8 +122,8 @@ func TestDeleteCategory(t *testing.T) {
 	})
 
 	t.Run("Delete non-existent category", func(t *testing.T) {
-		err := repo.DeleteCategory(9999) // Non-existent ID
-		assert.NoError(t, err)           // `gorm.Delete` doesn't return an error if the record doesn't exist
+		err := repo.DeleteCategory(ctx, 9999) // Non-existent ID
+		assert.NoError(t, err)                // `gorm.Delete` doesn't return an error if the record doesn't exist
 	})
 }
 
@@ -126,17 +131,18 @@ func TestDeleteCategory(t *testing.T) {
 func TestUpdateCategory(t *testing.T) {
 	db := setupCategoryTestDB(t)
 	repo := NewCategoryRepository(db)
+	ctx := context.Background()
 
 	t.Run("Update existing category", func(t *testing.T) {
 		// Create a category
 		category := &models.Category{Name: "Transport", Description: "Car, public transport"}
-		err1 := repo.CreateCategory(category)
+		err1 := repo.CreateCategory(ctx, category)
 		assert.NoError(t, err1)
 
 		// Update the category
 		category.Name = "Travel"
 		category.Description = "Flights, hotels, and transport"
-		err := repo.UpdateCategory(category)
+		err := repo.UpdateCategory(ctx, category)
 		assert.NoError(t, err)
 
 		// Fetch updated category

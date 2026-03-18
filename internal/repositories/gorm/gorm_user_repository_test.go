@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"testing"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
@@ -20,11 +21,12 @@ func setupTestDB(t *testing.T) *gorm.DB {
 func TestUserRepository(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewUserRepository(db)
+	ctx := context.Background()
 
 	t.Run("should create a new user", func(t *testing.T) {
 		user := &models.User{Name: "John Doe", Email: "john@example.com", Password: "hashedpassword"}
 
-		err := repo.CreateUser(user)
+		err := repo.CreateUser(ctx, user)
 		assert.NoError(t, err)
 
 		var retrievedUser models.User
@@ -35,10 +37,10 @@ func TestUserRepository(t *testing.T) {
 
 	t.Run("should retrieve a user by email", func(t *testing.T) {
 		user := &models.User{Name: "Jane Doe", Email: "jane@example.com", Password: "hashedpassword"}
-		err := repo.CreateUser(user)
+		err := repo.CreateUser(ctx, user)
 		assert.NoError(t, err)
 
-		foundUser, err := repo.GetUserByEmail("jane@example.com")
+		foundUser, err := repo.GetUserByEmail(ctx, "jane@example.com")
 		assert.NoError(t, err)
 		assert.NotNil(t, foundUser)
 		assert.Equal(t, "Jane Doe", foundUser.Name)
@@ -46,10 +48,10 @@ func TestUserRepository(t *testing.T) {
 
 	t.Run("should delete a user", func(t *testing.T) {
 		user := &models.User{Name: "Mark Smith", Email: "mark@example.com", Password: "hashedpassword"}
-		err1 := repo.CreateUser(user)
+		err1 := repo.CreateUser(ctx, user)
 		assert.NoError(t, err1)
 
-		err := repo.DeleteUser(user.ID)
+		err := repo.DeleteUser(ctx, user.ID)
 		assert.NoError(t, err)
 
 		var retrievedUser models.User
@@ -60,7 +62,7 @@ func TestUserRepository(t *testing.T) {
 		repo := NewUserRepository(db)
 
 		// Attempt to fetch a non-existent user
-		user, err := repo.GetUserByEmail("nonexistent@example.com")
+		user, err := repo.GetUserByEmail(ctx, "nonexistent@example.com")
 
 		// This should trigger the missing error branch
 		assert.Error(t, err)
