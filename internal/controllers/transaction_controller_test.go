@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/filters"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"github.com/gin-gonic/gin"
@@ -27,13 +28,13 @@ func (m *MockTransactionService) AddTransaction(ctx context.Context, t *models.T
 	return args.Error(0)
 }
 
-func (m *MockTransactionService) GetTransactionsByUser(ctx context.Context, userID uint) ([]models.Transaction, error) {
-	args := m.Called(ctx, userID)
+func (m *MockTransactionService) GetTransactionsByUser(ctx context.Context, userID uint, transactionFilters filters.TransactionFilters) ([]models.Transaction, error) {
+	args := m.Called(ctx, userID, transactionFilters)
 	return args.Get(0).([]models.Transaction), args.Error(1)
 }
 
-func (m *MockTransactionService) GetTransactionsPageByUser(ctx context.Context, userID uint, params pagination.Params) ([]models.Transaction, int64, error) {
-	args := m.Called(ctx, userID, params)
+func (m *MockTransactionService) GetTransactionsPageByUser(ctx context.Context, userID uint, params pagination.Params, transactionFilters filters.TransactionFilters) ([]models.Transaction, int64, error) {
+	args := m.Called(ctx, userID, params, transactionFilters)
 	return args.Get(0).([]models.Transaction), args.Get(1).(int64), args.Error(2)
 }
 
@@ -146,7 +147,7 @@ func TestGetTransactions(t *testing.T) {
 			{UserID: 1, Amount: 100.0, CategoryID: 2, Type: "income", Date: now, Note: "Salary"},
 		}
 
-		mockService.On("GetTransactionsByUser", mock.Anything, uint(1)).Return(transactions, nil).Once()
+		mockService.On("GetTransactionsByUser", mock.Anything, uint(1), filters.TransactionFilters{}).Return(transactions, nil).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -166,7 +167,7 @@ func TestGetTransactions(t *testing.T) {
 		mockService := new(MockTransactionService)
 		controller := NewTransactionController(mockService)
 
-		mockService.On("GetTransactionsByUser", mock.Anything, uint(1)).
+		mockService.On("GetTransactionsByUser", mock.Anything, uint(1), filters.TransactionFilters{}).
 			Return([]models.Transaction(nil), apperrors.Internal("transactions_fetch_failed", "failed to retrieve transactions", nil)).Once()
 
 		w := httptest.NewRecorder()
@@ -191,16 +192,17 @@ func TestGetTransactionsPage(t *testing.T) {
 
 		now := time.Now().UTC()
 		params := pagination.New(2, 1)
+		transactionFilters := filters.TransactionFilters{Type: "income"}
 		transactions := []models.Transaction{
 			{UserID: 1, Amount: 100.0, CategoryID: 2, Type: "income", Date: now, Note: "Salary"},
 		}
 
-		mockService.On("GetTransactionsPageByUser", mock.Anything, uint(1), params).Return(transactions, int64(3), nil).Once()
+		mockService.On("GetTransactionsPageByUser", mock.Anything, uint(1), params, transactionFilters).Return(transactions, int64(3), nil).Once()
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Set("userID", uint(1))
-		c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/transactions?page=2&page_size=1", nil)
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/transactions?page=2&page_size=1&type=income", nil)
 
 		controller.GetTransactionsPage(c)
 
@@ -210,6 +212,28 @@ func TestGetTransactionsPage(t *testing.T) {
 		assert.Contains(t, w.Body.String(), `"page_size":1`)
 		assert.Contains(t, w.Body.String(), `"total":3`)
 		assert.Contains(t, w.Body.String(), `"total_pages":3`)
+	})
+
+	t.Run("Legacy Endpoint Accepts Filters", func(t *testing.T) {
+		mockService := new(MockTransactionService)
+		controller := NewTransactionController(mockService)
+
+		transactionFilters := filters.TransactionFilters{Type: "expense"}
+		transactions := []models.Transaction{
+			{UserID: 1, Amount: 20.0, CategoryID: 1, Type: "expense", Date: time.Now().UTC(), Note: "Groceries"},
+		}
+
+		mockService.On("GetTransactionsByUser", mock.Anything, uint(1), transactionFilters).Return(transactions, nil).Once()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Set("userID", uint(1))
+		c.Request = httptest.NewRequest(http.MethodGet, "/transactions?type=expense", nil)
+
+		controller.GetTransactions(c)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), `"type":"expense"`)
 	})
 
 	t.Run("Invalid Page", func(t *testing.T) {
@@ -225,6 +249,21 @@ func TestGetTransactionsPage(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), `"code":"invalid_page"`)
+	})
+
+	t.Run("Invalid Filter", func(t *testing.T) {
+		mockService := new(MockTransactionService)
+		controller := NewTransactionController(mockService)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Set("userID", uint(1))
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/transactions?type=transfer", nil)
+
+		controller.GetTransactionsPage(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), `"code":"invalid_transaction_type"`)
 	})
 }
 

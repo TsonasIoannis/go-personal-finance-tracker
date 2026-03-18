@@ -70,7 +70,13 @@ func (tc *TransactionController) GetTransactions(c *gin.Context) {
 		return
 	}
 
-	transactions, err := tc.transactionService.GetTransactionsByUser(ctx, userID)
+	transactionFilters, err := parseTransactionFilters(c)
+	if err != nil {
+		httpapi.WriteError(c, err)
+		return
+	}
+
+	transactions, err := tc.transactionService.GetTransactionsByUser(ctx, userID, transactionFilters)
 	if err != nil {
 		httpapi.WriteError(c, err)
 		return
@@ -88,13 +94,19 @@ func (tc *TransactionController) GetTransactionsPage(c *gin.Context) {
 		return
 	}
 
+	transactionFilters, err := parseTransactionFilters(c)
+	if err != nil {
+		httpapi.WriteError(c, err)
+		return
+	}
+
 	params, err := parsePaginationParams(c)
 	if err != nil {
 		httpapi.WriteError(c, err)
 		return
 	}
 
-	transactions, total, err := tc.transactionService.GetTransactionsPageByUser(ctx, userID, params)
+	transactions, total, err := tc.transactionService.GetTransactionsPageByUser(ctx, userID, params, transactionFilters)
 	if err != nil {
 		httpapi.WriteError(c, err)
 		return

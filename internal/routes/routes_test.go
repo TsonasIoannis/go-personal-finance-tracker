@@ -7,6 +7,7 @@ import (
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/auth"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/controllers"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/filters"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"github.com/gin-gonic/gin"
@@ -28,11 +29,11 @@ func (stubTransactionService) AddTransaction(context.Context, *models.Transactio
 	return nil
 }
 
-func (stubTransactionService) GetTransactionsByUser(context.Context, uint) ([]models.Transaction, error) {
+func (stubTransactionService) GetTransactionsByUser(context.Context, uint, filters.TransactionFilters) ([]models.Transaction, error) {
 	return nil, nil
 }
 
-func (stubTransactionService) GetTransactionsPageByUser(context.Context, uint, pagination.Params) ([]models.Transaction, int64, error) {
+func (stubTransactionService) GetTransactionsPageByUser(context.Context, uint, pagination.Params, filters.TransactionFilters) ([]models.Transaction, int64, error) {
 	return nil, 0, nil
 }
 

@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/filters"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"gorm.io/gorm"
@@ -12,8 +13,8 @@ import (
 type TransactionRepository interface {
 	CreateTransaction(ctx context.Context, transaction *models.Transaction) error
 	GetTransactionByID(ctx context.Context, id uint) (*models.Transaction, error)
-	GetTransactionsByUserID(ctx context.Context, userID uint) ([]models.Transaction, error)
-	GetTransactionsPageByUserID(ctx context.Context, userID uint, params pagination.Params) ([]models.Transaction, int64, error)
+	GetTransactionsByUserID(ctx context.Context, userID uint, filters filters.TransactionFilters) ([]models.Transaction, error)
+	GetTransactionsPageByUserID(ctx context.Context, userID uint, params pagination.Params, filters filters.TransactionFilters) ([]models.Transaction, int64, error)
 	UpdateTransaction(ctx context.Context, transaction *models.Transaction) error
 	DeleteTransaction(ctx context.Context, id uint) error
 }
@@ -44,26 +45,28 @@ func (r *GormTransactionRepository) GetTransactionByID(ctx context.Context, id u
 }
 
 // GetTransactionsByUserID fetches all transactions for a specific user
-func (r *GormTransactionRepository) GetTransactionsByUserID(ctx context.Context, userID uint) ([]models.Transaction, error) {
+func (r *GormTransactionRepository) GetTransactionsByUserID(ctx context.Context, userID uint, transactionFilters filters.TransactionFilters) ([]models.Transaction, error) {
 	var transactions []models.Transaction
-	err := r.db.WithContext(ctx).Where("user_id = ?", userID).Order("date DESC").Order("id DESC").Find(&transactions).Error
+	err := r.transactionQuery(ctx, userID, transactionFilters).
+		Order("date DESC").
+		Order("id DESC").
+		Find(&transactions).Error
 	return transactions, err
 }
 
 // GetTransactionsPageByUserID fetches a paginated transaction list for a specific user.
-func (r *GormTransactionRepository) GetTransactionsPageByUserID(ctx context.Context, userID uint, params pagination.Params) ([]models.Transaction, int64, error) {
+func (r *GormTransactionRepository) GetTransactionsPageByUserID(ctx context.Context, userID uint, params pagination.Params, transactionFilters filters.TransactionFilters) ([]models.Transaction, int64, error) {
 	var (
 		transactions []models.Transaction
 		total        int64
 	)
 
-	query := r.db.WithContext(ctx).Model(&models.Transaction{}).Where("user_id = ?", userID)
+	query := r.transactionQuery(ctx, userID, transactionFilters)
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	err := r.db.WithContext(ctx).
-		Where("user_id = ?", userID).
+	err := r.transactionQuery(ctx, userID, transactionFilters).
 		Order("date DESC").
 		Order("id DESC").
 		Offset(params.Offset()).
@@ -84,4 +87,26 @@ func (r *GormTransactionRepository) UpdateTransaction(ctx context.Context, trans
 // DeleteTransaction removes a transaction from the database
 func (r *GormTransactionRepository) DeleteTransaction(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Delete(&models.Transaction{}, id).Error
+}
+
+func (r *GormTransactionRepository) transactionQuery(ctx context.Context, userID uint, transactionFilters filters.TransactionFilters) *gorm.DB {
+	query := r.db.WithContext(ctx).Model(&models.Transaction{}).Where("user_id = ?", userID)
+
+	if transactionFilters.Type != "" {
+		query = query.Where("\"type\" = ?", transactionFilters.Type)
+	}
+
+	if transactionFilters.CategoryID != nil {
+		query = query.Where("category_id = ?", *transactionFilters.CategoryID)
+	}
+
+	if transactionFilters.From != nil {
+		query = query.Where("date >= ?", *transactionFilters.From)
+	}
+
+	if transactionFilters.To != nil {
+		query = query.Where("date <= ?", *transactionFilters.To)
+	}
+
+	return query
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/filters"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"github.com/stretchr/testify/assert"
@@ -31,13 +32,13 @@ func (m *MockTransactionRepository) GetTransactionByID(ctx context.Context, id u
 	return nil, args.Error(1)
 }
 
-func (m *MockTransactionRepository) GetTransactionsByUserID(ctx context.Context, userID uint) ([]models.Transaction, error) {
-	args := m.Called(ctx, userID)
+func (m *MockTransactionRepository) GetTransactionsByUserID(ctx context.Context, userID uint, transactionFilters filters.TransactionFilters) ([]models.Transaction, error) {
+	args := m.Called(ctx, userID, transactionFilters)
 	return args.Get(0).([]models.Transaction), args.Error(1)
 }
 
-func (m *MockTransactionRepository) GetTransactionsPageByUserID(ctx context.Context, userID uint, params pagination.Params) ([]models.Transaction, int64, error) {
-	args := m.Called(ctx, userID, params)
+func (m *MockTransactionRepository) GetTransactionsPageByUserID(ctx context.Context, userID uint, params pagination.Params, transactionFilters filters.TransactionFilters) ([]models.Transaction, int64, error) {
+	args := m.Called(ctx, userID, params, transactionFilters)
 	return args.Get(0).([]models.Transaction), args.Get(1).(int64), args.Error(2)
 }
 
@@ -139,10 +140,11 @@ func TestGetTransactionsByUser(t *testing.T) {
 			{ID: 1, UserID: 1, Type: "expense", Amount: 50, CategoryID: 1},
 			{ID: 2, UserID: 1, Type: "income", Amount: 200, CategoryID: 2},
 		}
+		transactionFilters := filters.TransactionFilters{Type: "income"}
 
-		mockTransactionRepo.On("GetTransactionsByUserID", ctx, uint(1)).Return(transactions, nil)
+		mockTransactionRepo.On("GetTransactionsByUserID", ctx, uint(1), transactionFilters).Return(transactions, nil)
 
-		result, err := service.GetTransactionsByUser(ctx, 1)
+		result, err := service.GetTransactionsByUser(ctx, 1, transactionFilters)
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
 		mockTransactionRepo.AssertExpectations(t)
@@ -154,15 +156,16 @@ func TestGetTransactionsPageByUser(t *testing.T) {
 	service := NewTransactionService(mockTransactionRepo, nil)
 	ctx := context.Background()
 	params := pagination.New(2, 1)
+	transactionFilters := filters.TransactionFilters{Type: "expense"}
 
 	t.Run("Retrieve paginated transactions for user", func(t *testing.T) {
 		transactions := []models.Transaction{
 			{ID: 2, UserID: 1, Type: "income", Amount: 200, CategoryID: 2},
 		}
 
-		mockTransactionRepo.On("GetTransactionsPageByUserID", ctx, uint(1), params).Return(transactions, int64(3), nil)
+		mockTransactionRepo.On("GetTransactionsPageByUserID", ctx, uint(1), params, transactionFilters).Return(transactions, int64(3), nil)
 
-		result, total, err := service.GetTransactionsPageByUser(ctx, 1, params)
+		result, total, err := service.GetTransactionsPageByUser(ctx, 1, params, transactionFilters)
 		assert.NoError(t, err)
 		assert.Len(t, result, 1)
 		assert.Equal(t, int64(3), total)

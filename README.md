@@ -55,7 +55,7 @@ These endpoints require `Authorization: Bearer <token>`.
 
 | Method | Endpoint            | Description                                         |
 | ------ | ------------------- | --------------------------------------------------- |
-| GET    | `/api/v1/transactions`     | List the authenticated user's transactions with `page` and `page_size` |
+| GET    | `/api/v1/transactions`     | List the authenticated user's transactions with pagination and optional filters |
 | POST   | `/api/v1/transactions`     | Create a transaction for the authenticated user |
 | DELETE | `/api/v1/transactions/:id` | Delete one of the authenticated user's transactions |
 | GET    | `/api/v1/budgets`          | List the authenticated user's budgets with `page` and `page_size` |
@@ -240,9 +240,11 @@ List paginated data:
 ```sh
 curl "http://localhost:8080/api/v1/budgets?page=1&page_size=20" -H "Authorization: Bearer <token>"
 curl "http://localhost:8080/api/v1/transactions?page=1&page_size=20" -H "Authorization: Bearer <token>"
+curl "http://localhost:8080/api/v1/transactions?page=1&page_size=20&type=expense&category_id=1" -H "Authorization: Bearer <token>"
+curl "http://localhost:8080/api/v1/transactions?page=1&page_size=20&from=2026-03-01&to=2026-03-31" -H "Authorization: Bearer <token>"
 ```
 
-The versioned list endpoints now respond with a `data` array plus a `pagination` object. Legacy unversioned list endpoints remain array-shaped during the compatibility window.
+The versioned list endpoints now respond with a `data` array plus a `pagination` object. `/api/v1/transactions` also supports `type`, `category_id`, `from`, and `to` filters. The `from` and `to` values accept either RFC3339 timestamps or `YYYY-MM-DD`. Legacy unversioned list endpoints remain array-shaped during the compatibility window.
 
 ## Testing
 
