@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"gorm.io/gorm"
 )
 
@@ -13,6 +14,7 @@ type BudgetRepository interface {
 	CreateBudget(ctx context.Context, budget *models.Budget) error
 	GetBudgetByID(ctx context.Context, id uint) (*models.Budget, error)
 	GetBudgetsByUserID(ctx context.Context, userID uint) ([]models.Budget, error)
+	GetBudgetsPageByUserID(ctx context.Context, userID uint, params pagination.Params) ([]models.Budget, int64, error)
 	UpdateBudget(ctx context.Context, budget *models.Budget) error
 	DeleteBudget(ctx context.Context, id uint) error
 }
@@ -45,8 +47,34 @@ func (r *GormBudgetRepository) GetBudgetByID(ctx context.Context, id uint) (*mod
 // GetBudgetsByUserID fetches all budgets for a specific user
 func (r *GormBudgetRepository) GetBudgetsByUserID(ctx context.Context, userID uint) ([]models.Budget, error) {
 	var budgets []models.Budget
-	err := r.db.WithContext(ctx).Where("user_id = ?", userID).Find(&budgets).Error
+	err := r.db.WithContext(ctx).Where("user_id = ?", userID).Order("start_date DESC").Order("id DESC").Find(&budgets).Error
 	return budgets, err
+}
+
+// GetBudgetsPageByUserID fetches a paginated budget list for a specific user.
+func (r *GormBudgetRepository) GetBudgetsPageByUserID(ctx context.Context, userID uint, params pagination.Params) ([]models.Budget, int64, error) {
+	var (
+		budgets []models.Budget
+		total   int64
+	)
+
+	query := r.db.WithContext(ctx).Model(&models.Budget{}).Where("user_id = ?", userID)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := r.db.WithContext(ctx).
+		Where("user_id = ?", userID).
+		Order("start_date DESC").
+		Order("id DESC").
+		Offset(params.Offset()).
+		Limit(params.PageSize).
+		Find(&budgets).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return budgets, total, nil
 }
 
 // UpdateBudget updates an existing budget

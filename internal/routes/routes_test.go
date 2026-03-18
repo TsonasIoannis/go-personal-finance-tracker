@@ -8,6 +8,7 @@ import (
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/auth"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/controllers"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,6 +32,10 @@ func (stubTransactionService) GetTransactionsByUser(context.Context, uint) ([]mo
 	return nil, nil
 }
 
+func (stubTransactionService) GetTransactionsPageByUser(context.Context, uint, pagination.Params) ([]models.Transaction, int64, error) {
+	return nil, 0, nil
+}
+
 func (stubTransactionService) DeleteTransactionForUser(context.Context, uint, uint) error {
 	return nil
 }
@@ -47,6 +52,10 @@ func (stubBudgetService) UpdateBudget(context.Context, *models.Budget) error {
 
 func (stubBudgetService) GetBudgetsByUser(context.Context, uint) ([]models.Budget, error) {
 	return nil, nil
+}
+
+func (stubBudgetService) GetBudgetsPageByUser(context.Context, uint, pagination.Params) ([]models.Budget, int64, error) {
+	return nil, 0, nil
 }
 
 func (stubBudgetService) DeleteBudgetForUser(context.Context, uint, uint) error {

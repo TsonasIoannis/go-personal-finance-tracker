@@ -8,6 +8,7 @@ import (
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -33,6 +34,11 @@ func (m *MockBudgetRepository) GetBudgetByID(ctx context.Context, id uint) (*mod
 func (m *MockBudgetRepository) GetBudgetsByUserID(ctx context.Context, userID uint) ([]models.Budget, error) {
 	args := m.Called(ctx, userID)
 	return args.Get(0).([]models.Budget), args.Error(1)
+}
+
+func (m *MockBudgetRepository) GetBudgetsPageByUserID(ctx context.Context, userID uint, params pagination.Params) ([]models.Budget, int64, error) {
+	args := m.Called(ctx, userID, params)
+	return args.Get(0).([]models.Budget), args.Get(1).(int64), args.Error(2)
 }
 
 func (m *MockBudgetRepository) UpdateBudget(ctx context.Context, budget *models.Budget) error {
@@ -181,6 +187,28 @@ func TestGetBudgetsByUser(t *testing.T) {
 		result, err := service.GetBudgetsByUser(ctx, 999)
 		assert.NoError(t, err)
 		assert.Len(t, result, 0)
+		mockRepo.AssertExpectations(t)
+	})
+}
+
+func TestGetBudgetsPageByUser(t *testing.T) {
+	mockRepo := new(MockBudgetRepository)
+	service := NewBudgetService(mockRepo)
+	ctx := context.Background()
+	params := pagination.New(1, 2)
+
+	t.Run("Retrieve paginated budgets for user", func(t *testing.T) {
+		budgets := []models.Budget{
+			{ID: 1, UserID: 1, CategoryID: 2, Limit: 1000},
+			{ID: 2, UserID: 1, CategoryID: 3, Limit: 500},
+		}
+
+		mockRepo.On("GetBudgetsPageByUserID", ctx, uint(1), params).Return(budgets, int64(4), nil)
+
+		result, total, err := service.GetBudgetsPageByUser(ctx, 1, params)
+		assert.NoError(t, err)
+		assert.Len(t, result, 2)
+		assert.Equal(t, int64(4), total)
 		mockRepo.AssertExpectations(t)
 	})
 }

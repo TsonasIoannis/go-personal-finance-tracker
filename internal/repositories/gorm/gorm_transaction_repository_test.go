@@ -7,6 +7,7 @@ import (
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
@@ -86,6 +87,26 @@ func TestTransactionRepository(t *testing.T) {
 		transactions, err := repo.GetTransactionsByUserID(ctx, user.ID)
 		assert.NoError(t, err)
 		assert.Len(t, transactions, 2) // Ensure we only have 2 transactions
+	})
+
+	t.Run("GetTransactionsPageByUserID", func(t *testing.T) {
+		db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.Transaction{})
+
+		for i := 0; i < 3; i++ {
+			err := repo.CreateTransaction(ctx, &models.Transaction{
+				UserID:     user.ID,
+				Type:       "expense",
+				Amount:     float64(i + 1),
+				CategoryID: 1,
+				Date:       time.Now().Add(time.Duration(i) * time.Minute),
+			})
+			assert.NoError(t, err)
+		}
+
+		transactions, total, err := repo.GetTransactionsPageByUserID(ctx, user.ID, pagination.New(2, 1))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(3), total)
+		assert.Len(t, transactions, 1)
 	})
 
 	t.Run("UpdateTransaction", func(t *testing.T) {

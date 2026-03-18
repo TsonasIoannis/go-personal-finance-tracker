@@ -79,6 +79,33 @@ func (tc *TransactionController) GetTransactions(c *gin.Context) {
 	c.JSON(http.StatusOK, newTransactionResponses(transactions))
 }
 
+// GetTransactionsPage fetches a paginated transaction list for a user.
+func (tc *TransactionController) GetTransactionsPage(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	userID, ok := currentUserID(c)
+	if !ok {
+		return
+	}
+
+	params, err := parsePaginationParams(c)
+	if err != nil {
+		httpapi.WriteError(c, err)
+		return
+	}
+
+	transactions, total, err := tc.transactionService.GetTransactionsPageByUser(ctx, userID, params)
+	if err != nil {
+		httpapi.WriteError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, paginatedResponse[transactionResponse]{
+		Data:       newTransactionResponses(transactions),
+		Pagination: newPaginationResponse(params, total),
+	})
+}
+
 // DeleteTransaction removes a transaction
 func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
 	ctx := c.Request.Context()

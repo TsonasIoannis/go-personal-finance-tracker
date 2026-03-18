@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"gorm.io/gorm"
 )
 
@@ -12,6 +13,7 @@ type TransactionRepository interface {
 	CreateTransaction(ctx context.Context, transaction *models.Transaction) error
 	GetTransactionByID(ctx context.Context, id uint) (*models.Transaction, error)
 	GetTransactionsByUserID(ctx context.Context, userID uint) ([]models.Transaction, error)
+	GetTransactionsPageByUserID(ctx context.Context, userID uint, params pagination.Params) ([]models.Transaction, int64, error)
 	UpdateTransaction(ctx context.Context, transaction *models.Transaction) error
 	DeleteTransaction(ctx context.Context, id uint) error
 }
@@ -44,8 +46,34 @@ func (r *GormTransactionRepository) GetTransactionByID(ctx context.Context, id u
 // GetTransactionsByUserID fetches all transactions for a specific user
 func (r *GormTransactionRepository) GetTransactionsByUserID(ctx context.Context, userID uint) ([]models.Transaction, error) {
 	var transactions []models.Transaction
-	err := r.db.WithContext(ctx).Where("user_id = ?", userID).Find(&transactions).Error
+	err := r.db.WithContext(ctx).Where("user_id = ?", userID).Order("date DESC").Order("id DESC").Find(&transactions).Error
 	return transactions, err
+}
+
+// GetTransactionsPageByUserID fetches a paginated transaction list for a specific user.
+func (r *GormTransactionRepository) GetTransactionsPageByUserID(ctx context.Context, userID uint, params pagination.Params) ([]models.Transaction, int64, error) {
+	var (
+		transactions []models.Transaction
+		total        int64
+	)
+
+	query := r.db.WithContext(ctx).Model(&models.Transaction{}).Where("user_id = ?", userID)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := r.db.WithContext(ctx).
+		Where("user_id = ?", userID).
+		Order("date DESC").
+		Order("id DESC").
+		Offset(params.Offset()).
+		Limit(params.PageSize).
+		Find(&transactions).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return transactions, total, nil
 }
 
 // UpdateTransaction updates an existing transaction

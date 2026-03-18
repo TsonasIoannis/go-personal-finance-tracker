@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 )
 
 // BudgetRepository defines the required repository methods
@@ -12,6 +13,7 @@ type BudgetRepository interface {
 	CreateBudget(ctx context.Context, budget *models.Budget) error
 	GetBudgetByID(ctx context.Context, id uint) (*models.Budget, error)
 	GetBudgetsByUserID(ctx context.Context, userID uint) ([]models.Budget, error)
+	GetBudgetsPageByUserID(ctx context.Context, userID uint, params pagination.Params) ([]models.Budget, int64, error)
 	UpdateBudget(ctx context.Context, budget *models.Budget) error
 	DeleteBudget(ctx context.Context, id uint) error
 }

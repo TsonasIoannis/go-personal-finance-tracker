@@ -55,10 +55,10 @@ These endpoints require `Authorization: Bearer <token>`.
 
 | Method | Endpoint            | Description                                         |
 | ------ | ------------------- | --------------------------------------------------- |
-| GET    | `/api/v1/transactions`     | List the authenticated user's transactions    |
+| GET    | `/api/v1/transactions`     | List the authenticated user's transactions with `page` and `page_size` |
 | POST   | `/api/v1/transactions`     | Create a transaction for the authenticated user |
 | DELETE | `/api/v1/transactions/:id` | Delete one of the authenticated user's transactions |
-| GET    | `/api/v1/budgets`          | List the authenticated user's budgets         |
+| GET    | `/api/v1/budgets`          | List the authenticated user's budgets with `page` and `page_size` |
 | POST   | `/api/v1/budgets`          | Create a budget for the authenticated user    |
 | DELETE | `/api/v1/budgets/:id`      | Delete one of the authenticated user's budgets |
 
@@ -235,12 +235,14 @@ curl -X POST http://localhost:8080/api/v1/transactions \
   -d '{"type":"expense","amount":42.5,"category_id":1,"date":"2026-03-15T12:00:00Z","note":"Groceries"}'
 ```
 
-List data:
+List paginated data:
 
 ```sh
-curl http://localhost:8080/api/v1/budgets -H "Authorization: Bearer <token>"
-curl http://localhost:8080/api/v1/transactions -H "Authorization: Bearer <token>"
+curl "http://localhost:8080/api/v1/budgets?page=1&page_size=20" -H "Authorization: Bearer <token>"
+curl "http://localhost:8080/api/v1/transactions?page=1&page_size=20" -H "Authorization: Bearer <token>"
 ```
+
+The versioned list endpoints now respond with a `data` array plus a `pagination` object. Legacy unversioned list endpoints remain array-shaped during the compatibility window.
 
 ## Testing
 
@@ -274,7 +276,7 @@ Successful responses are still resource-specific for now, while error responses 
 ## Notes
 
 - This project is intentionally scoped as an illustration repository rather than a production-complete finance platform.
-- The current API returns model-shaped JSON for budgets and transactions. That is a reasonable next refinement for a follow-up branch.
+- The legacy unversioned list endpoints still return model-shaped arrays for compatibility, while `/api/v1` list endpoints return paginated envelopes.
 - Budget enforcement currently validates the transaction against the matching budget limit, but not yet against accumulated spending over a period.
 
 ## License

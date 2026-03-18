@@ -77,6 +77,33 @@ func (bc *BudgetController) GetBudgets(c *gin.Context) {
 	c.JSON(http.StatusOK, newBudgetResponses(budgets))
 }
 
+// GetBudgetsPage fetches a paginated budget list for a user.
+func (bc *BudgetController) GetBudgetsPage(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	userID, ok := currentUserID(c)
+	if !ok {
+		return
+	}
+
+	params, err := parsePaginationParams(c)
+	if err != nil {
+		httpapi.WriteError(c, err)
+		return
+	}
+
+	budgets, total, err := bc.budgetService.GetBudgetsPageByUser(ctx, userID, params)
+	if err != nil {
+		httpapi.WriteError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, paginatedResponse[budgetResponse]{
+		Data:       newBudgetResponses(budgets),
+		Pagination: newPaginationResponse(params, total),
+	})
+}
+
 // DeleteBudget removes a budget
 func (bc *BudgetController) DeleteBudget(c *gin.Context) {
 	ctx := c.Request.Context()

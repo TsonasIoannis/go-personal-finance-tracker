@@ -11,6 +11,7 @@ import (
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -29,6 +30,11 @@ func (m *MockBudgetService) CreateBudget(ctx context.Context, budget *models.Bud
 func (m *MockBudgetService) GetBudgetsByUser(ctx context.Context, userID uint) ([]models.Budget, error) {
 	args := m.Called(ctx, userID)
 	return args.Get(0).([]models.Budget), args.Error(1)
+}
+
+func (m *MockBudgetService) GetBudgetsPageByUser(ctx context.Context, userID uint, params pagination.Params) ([]models.Budget, int64, error) {
+	args := m.Called(ctx, userID, params)
+	return args.Get(0).([]models.Budget), args.Get(1).(int64), args.Error(2)
 }
 
 func (m *MockBudgetService) DeleteBudgetForUser(ctx context.Context, userID, budgetID uint) error {
@@ -209,6 +215,53 @@ func TestGetBudgets(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), `"code":"budgets_fetch_failed"`)
 		assert.Contains(t, w.Body.String(), "failed to retrieve budgets")
+	})
+}
+
+func TestGetBudgetsPage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("Success", func(t *testing.T) {
+		mockService := new(MockBudgetService)
+		controller := NewBudgetController(mockService)
+
+		now := time.Now().UTC()
+		params := pagination.New(1, 2)
+		expectedBudgets := []models.Budget{
+			{UserID: 1, CategoryID: 2, Limit: 1000, StartDate: now, EndDate: now.AddDate(0, 1, 0)},
+			{UserID: 1, CategoryID: 3, Limit: 500, StartDate: now, EndDate: now.AddDate(0, 2, 0)},
+		}
+
+		mockService.On("GetBudgetsPageByUser", mock.Anything, uint(1), params).Return(expectedBudgets, int64(4), nil).Once()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Set("userID", uint(1))
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/budgets?page=1&page_size=2", nil)
+
+		controller.GetBudgetsPage(c)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), `"data":[`)
+		assert.Contains(t, w.Body.String(), `"page":1`)
+		assert.Contains(t, w.Body.String(), `"page_size":2`)
+		assert.Contains(t, w.Body.String(), `"total":4`)
+		assert.Contains(t, w.Body.String(), `"total_pages":2`)
+	})
+
+	t.Run("Invalid Page Size", func(t *testing.T) {
+		mockService := new(MockBudgetService)
+		controller := NewBudgetController(mockService)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Set("userID", uint(1))
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/budgets?page_size=0", nil)
+
+		controller.GetBudgetsPage(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), `"code":"invalid_page_size"`)
 	})
 }
 

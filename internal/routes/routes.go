@@ -9,13 +9,13 @@ func SetupRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, userControl
 	registerPublicRoutes(router, userController)
 	legacyProtected := router.Group("/")
 	legacyProtected.Use(authMiddleware)
-	registerProtectedRoutes(legacyProtected, transactionController, budgetController)
+	registerLegacyProtectedRoutes(legacyProtected, transactionController, budgetController)
 
 	v1 := router.Group("/api/v1")
 	registerPublicRoutes(v1, userController)
 	v1Protected := v1.Group("/")
 	v1Protected.Use(authMiddleware)
-	registerProtectedRoutes(v1Protected, transactionController, budgetController)
+	registerVersionedProtectedRoutes(v1Protected, transactionController, budgetController)
 }
 
 func registerPublicRoutes(router gin.IRoutes, userController *controllers.UserController) {
@@ -23,11 +23,20 @@ func registerPublicRoutes(router gin.IRoutes, userController *controllers.UserCo
 	router.POST("/login", userController.Login)
 }
 
-func registerProtectedRoutes(router gin.IRoutes, transactionController *controllers.TransactionController, budgetController *controllers.BudgetController) {
+func registerLegacyProtectedRoutes(router gin.IRoutes, transactionController *controllers.TransactionController, budgetController *controllers.BudgetController) {
 	router.GET("/transactions", transactionController.GetTransactions)
 	router.POST("/transactions", transactionController.CreateTransaction)
 	router.DELETE("/transactions/:id", transactionController.DeleteTransaction)
 	router.GET("/budgets", budgetController.GetBudgets)
+	router.POST("/budgets", budgetController.CreateBudget)
+	router.DELETE("/budgets/:id", budgetController.DeleteBudget)
+}
+
+func registerVersionedProtectedRoutes(router gin.IRoutes, transactionController *controllers.TransactionController, budgetController *controllers.BudgetController) {
+	router.GET("/transactions", transactionController.GetTransactionsPage)
+	router.POST("/transactions", transactionController.CreateTransaction)
+	router.DELETE("/transactions/:id", transactionController.DeleteTransaction)
+	router.GET("/budgets", budgetController.GetBudgetsPage)
 	router.POST("/budgets", budgetController.CreateBudget)
 	router.DELETE("/budgets/:id", budgetController.DeleteBudget)
 }
