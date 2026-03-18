@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+# [1.11.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.10.0...v1.11.0) (2026-03-18)
+
+
+### Features
+
+* pass through context to services ([2b23aa6](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/2b23aa629826c842141fa4bc1765125345980d75))
+
 # [1.10.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.9.0...v1.10.0) (2026-03-16)
 
 
