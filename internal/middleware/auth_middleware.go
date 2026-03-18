@@ -33,6 +33,7 @@ func AuthMiddleware(tokenManager auth.TokenManager) gin.HandlerFunc {
 		c.Set("userID", claims.UserID)
 		c.Set("userEmail", claims.Email)
 		observability.SetLoggerOnGinContext(c, observability.LoggerFromGinContext(c).With("user_id", claims.UserID))
+		observability.SetAuthenticatedUser(c.Request.Context(), claims.UserID)
 		c.Next()
 	}
 }

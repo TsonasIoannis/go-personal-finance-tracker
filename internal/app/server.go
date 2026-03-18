@@ -36,6 +36,7 @@ func newRouter(cfg config.Config, db database.Database, repositories persistence
 	router := gin.New()
 	router.Use(
 		middleware.RequestIDMiddleware(),
+		observability.TracingMiddleware(),
 		middleware.StructuredLoggerMiddleware(slog.Default()),
 		metrics.Middleware(),
 		middleware.RecoveryMiddleware(slog.Default()),

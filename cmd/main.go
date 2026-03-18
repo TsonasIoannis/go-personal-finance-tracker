@@ -14,11 +14,13 @@ import (
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/app"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/config"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/observability"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/persistence"
 )
 
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+	observability.ConfigureTracing()
 
 	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
 		if err := runHealthcheck(); err != nil {

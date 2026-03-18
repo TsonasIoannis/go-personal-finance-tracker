@@ -69,6 +69,7 @@ func statusCode(kind apperrors.Kind) int {
 
 func logError(c *gin.Context, err error, status int) {
 	logger := observability.LoggerFromGinContext(c)
+	observability.RecordError(c.Request.Context(), err, status)
 	args := []any{"status", status}
 
 	appErr, ok := apperrors.As(err)

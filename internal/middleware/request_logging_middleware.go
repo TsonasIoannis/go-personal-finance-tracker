@@ -20,11 +20,16 @@ func StructuredLoggerMiddleware(logger *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		requestID, _ := RequestIDFromGinContext(c)
 		path := c.Request.URL.Path
-		requestLogger := logger.With(
+		args := []any{
 			"request_id", requestID,
 			"method", c.Request.Method,
 			"path", path,
-		)
+		}
+		if traceID, spanID, ok := observability.TraceIDsFromContext(c.Request.Context()); ok {
+			args = append(args, "trace_id", traceID, "span_id", spanID)
+		}
+
+		requestLogger := logger.With(args...)
 		observability.SetLoggerOnGinContext(c, requestLogger)
 
 		start := time.Now()
@@ -36,7 +41,7 @@ func StructuredLoggerMiddleware(logger *slog.Logger) gin.HandlerFunc {
 		}
 
 		requestLogger = observability.LoggerFromGinContext(c)
-		args := []any{
+		completionArgs := []any{
 			"route", route,
 			"status", c.Writer.Status(),
 			"latency_ms", time.Since(start).Milliseconds(),
@@ -45,16 +50,16 @@ func StructuredLoggerMiddleware(logger *slog.Logger) gin.HandlerFunc {
 		}
 
 		if len(c.Errors) > 0 {
-			args = append(args, "errors", c.Errors.String())
+			completionArgs = append(completionArgs, "errors", c.Errors.String())
 		}
 
 		switch {
 		case c.Writer.Status() >= http.StatusInternalServerError:
-			requestLogger.Error("request completed", args...)
+			requestLogger.Error("request completed", completionArgs...)
 		case c.Writer.Status() >= http.StatusBadRequest:
-			requestLogger.Warn("request completed", args...)
+			requestLogger.Warn("request completed", completionArgs...)
 		default:
-			requestLogger.Info("request completed", args...)
+			requestLogger.Info("request completed", completionArgs...)
 		}
 	}
 }
@@ -88,6 +93,7 @@ func RecoveryMiddleware(logger *slog.Logger) gin.HandlerFunc {
 			"panic", recovered,
 			"stack_trace", string(debug.Stack()),
 		)
+		observability.RecordPanic(c.Request.Context(), recovered)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 	})
