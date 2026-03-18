@@ -43,8 +43,8 @@ It demonstrates:
 
 | Method | Endpoint    | Description                            |
 | ------ | ----------- | -------------------------------------- |
-| POST   | `/register` | Register a user and return a token     |
-| POST   | `/login`    | Authenticate a user and return a token |
+| POST   | `/api/v1/register` | Register a user and return a token |
+| POST   | `/api/v1/login`    | Authenticate a user and return a token |
 | GET    | `/health`   | Liveness probe                         |
 | GET    | `/ready`    | Readiness probe backed by the database |
 | GET    | `/metrics`  | Prometheus metrics endpoint            |
@@ -55,12 +55,14 @@ These endpoints require `Authorization: Bearer <token>`.
 
 | Method | Endpoint            | Description                                         |
 | ------ | ------------------- | --------------------------------------------------- |
-| GET    | `/transactions`     | List the authenticated user's transactions          |
-| POST   | `/transactions`     | Create a transaction for the authenticated user     |
-| DELETE | `/transactions/:id` | Delete one of the authenticated user's transactions |
-| GET    | `/budgets`          | List the authenticated user's budgets               |
-| POST   | `/budgets`          | Create a budget for the authenticated user          |
-| DELETE | `/budgets/:id`      | Delete one of the authenticated user's budgets      |
+| GET    | `/api/v1/transactions`     | List the authenticated user's transactions    |
+| POST   | `/api/v1/transactions`     | Create a transaction for the authenticated user |
+| DELETE | `/api/v1/transactions/:id` | Delete one of the authenticated user's transactions |
+| GET    | `/api/v1/budgets`          | List the authenticated user's budgets         |
+| POST   | `/api/v1/budgets`          | Create a budget for the authenticated user    |
+| DELETE | `/api/v1/budgets/:id`      | Delete one of the authenticated user's budgets |
+
+Legacy unversioned endpoints remain available for compatibility during the transition to `/api/v1`.
 
 ## Project Structure
 
@@ -202,7 +204,7 @@ If `OTEL_EXPORTER_OTLP_ENDPOINT` is left empty, the tracing hooks remain in plac
 Register:
 
 ```sh
-curl -X POST http://localhost:8080/register \
+curl -X POST http://localhost:8080/api/v1/register \
   -H "Content-Type: application/json" \
   -d '{"name":"Alan","email":"alan@example.com","password":"secure123"}'
 ```
@@ -210,7 +212,7 @@ curl -X POST http://localhost:8080/register \
 Login:
 
 ```sh
-curl -X POST http://localhost:8080/login \
+curl -X POST http://localhost:8080/api/v1/login \
   -H "Content-Type: application/json" \
   -d '{"email":"alan@example.com","password":"secure123"}'
 ```
@@ -218,7 +220,7 @@ curl -X POST http://localhost:8080/login \
 Create a budget:
 
 ```sh
-curl -X POST http://localhost:8080/budgets \
+curl -X POST http://localhost:8080/api/v1/budgets \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"category_id":1,"limit":500,"start_date":"2026-03-01T00:00:00Z","end_date":"2026-03-31T23:59:59Z"}'
@@ -227,7 +229,7 @@ curl -X POST http://localhost:8080/budgets \
 Create a transaction:
 
 ```sh
-curl -X POST http://localhost:8080/transactions \
+curl -X POST http://localhost:8080/api/v1/transactions \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"type":"expense","amount":42.5,"category_id":1,"date":"2026-03-15T12:00:00Z","note":"Groceries"}'
@@ -236,8 +238,8 @@ curl -X POST http://localhost:8080/transactions \
 List data:
 
 ```sh
-curl http://localhost:8080/budgets -H "Authorization: Bearer <token>"
-curl http://localhost:8080/transactions -H "Authorization: Bearer <token>"
+curl http://localhost:8080/api/v1/budgets -H "Authorization: Bearer <token>"
+curl http://localhost:8080/api/v1/transactions -H "Authorization: Bearer <token>"
 ```
 
 ## Testing
