@@ -1,6 +1,7 @@
 package app
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/auth"
@@ -30,7 +31,11 @@ func NewHTTPServer(cfg config.Config, db database.Database, repositories persist
 
 func newRouter(cfg config.Config, db database.Database, repositories persistence.Repositories) *gin.Engine {
 	router := gin.New()
-	router.Use(middleware.RequestIDMiddleware(), gin.Logger(), gin.Recovery())
+	router.Use(
+		middleware.RequestIDMiddleware(),
+		middleware.StructuredLoggerMiddleware(slog.Default()),
+		middleware.RecoveryMiddleware(slog.Default()),
+	)
 
 	tokenManager := auth.NewJWTManager(cfg.JWTSecret, cfg.Auth.TokenTTL)
 	authMiddleware := middleware.AuthMiddleware(tokenManager)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,9 +18,11 @@ import (
 )
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
 	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
 		if err := runHealthcheck(); err != nil {
-			log.Printf("Healthcheck failed: %v", err)
+			slog.Error("healthcheck failed", "error", err)
 			os.Exit(1)
 		}
 
@@ -28,7 +30,7 @@ func main() {
 	}
 
 	if err := run(); err != nil {
-		log.Printf("Application failed: %v", err)
+		slog.Error("application failed", "error", err)
 		os.Exit(1)
 	}
 }
@@ -53,14 +55,14 @@ func run() error {
 		return fmt.Errorf("database health check failed: %w", err)
 	}
 
-	log.Println("Database is healthy.")
+	slog.Info("database is healthy")
 
 	repositories := persistence.NewGormRepositories(db.GetDB())
 	server := app.NewHTTPServer(cfg, db, repositories)
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		log.Printf("Starting server on %s", cfg.Address())
+		slog.Info("starting server", "address", cfg.Address())
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serverErrors <- err
 		}
@@ -73,17 +75,17 @@ func run() error {
 	case err := <-serverErrors:
 		return fmt.Errorf("server failed: %w", err)
 	case <-shutdownContext.Done():
-		log.Println("Shutdown signal received.")
+		slog.Info("shutdown signal received")
 	}
 
 	gracefulShutdownContext, cancel := context.WithTimeout(context.Background(), cfg.HTTP.ShutdownTimeout)
 	defer cancel()
 
 	if err := server.Shutdown(gracefulShutdownContext); err != nil {
-		log.Printf("Graceful shutdown failed: %v", err)
+		slog.Error("graceful shutdown failed", "error", err)
 	}
 
-	log.Println("Server shutdown complete.")
+	slog.Info("server shutdown complete")
 	return nil
 }
 
@@ -109,6 +111,6 @@ func runHealthcheck() error {
 
 func closeDatabase(db database.Database) {
 	if err := db.Close(); err != nil {
-		log.Printf("Database close failed: %v", err)
+		slog.Error("database close failed", "error", err)
 	}
 }
