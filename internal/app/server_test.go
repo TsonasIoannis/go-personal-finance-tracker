@@ -72,4 +72,16 @@ func TestNewRouterExposesMetrics(t *testing.T) {
 	if !strings.Contains(body, `status_code="200"`) {
 		t.Fatal("expected successful status code labels to be present in metrics output")
 	}
+
+	swaggerRequest := httptest.NewRequest(http.MethodGet, "/swagger/doc.json", nil)
+	swaggerResponse := httptest.NewRecorder()
+	router.ServeHTTP(swaggerResponse, swaggerRequest)
+
+	if swaggerResponse.Code != http.StatusOK {
+		t.Fatalf("expected /swagger/doc.json status %d, got %d", http.StatusOK, swaggerResponse.Code)
+	}
+
+	if !strings.Contains(swaggerResponse.Body.String(), "\"swagger\"") {
+		t.Fatal("expected generated swagger document to be served")
+	}
 }

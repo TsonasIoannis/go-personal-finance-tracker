@@ -38,6 +38,17 @@ func NewUserController(userService services.UserService, tokenManager auth.Token
 }
 
 // Register handles user registration
+// @Summary Register a new user
+// @Description Create a user account and return a signed auth token.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param payload body registerRequest true "Registration payload"
+// @Success 201 {object} authResponse
+// @Failure 400 {object} httpapi.ErrorResponse
+// @Failure 409 {object} httpapi.ErrorResponse
+// @Failure 500 {object} httpapi.ErrorResponse
+// @Router /api/v1/register [post]
 func (uc *UserController) Register(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req registerRequest
@@ -67,6 +78,17 @@ func (uc *UserController) Register(c *gin.Context) {
 }
 
 // Login handles user authentication
+// @Summary Log in a user
+// @Description Authenticate a user and return a signed auth token.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param payload body loginRequest true "Login payload"
+// @Success 200 {object} authResponse
+// @Failure 400 {object} httpapi.ErrorResponse
+// @Failure 401 {object} httpapi.ErrorResponse
+// @Failure 500 {object} httpapi.ErrorResponse
+// @Router /api/v1/login [post]
 func (uc *UserController) Login(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req loginRequest

@@ -48,6 +48,7 @@ It demonstrates:
 | GET    | `/health`   | Liveness probe                         |
 | GET    | `/ready`    | Readiness probe backed by the database |
 | GET    | `/metrics`  | Prometheus metrics endpoint            |
+| GET    | `/swagger/index.html` | Interactive OpenAPI docs          |
 
 ### Protected
 
@@ -198,6 +199,18 @@ $env:OTEL_TRACES_SAMPLER_ARG="0.25"
 ```
 
 If `OTEL_EXPORTER_OTLP_ENDPOINT` is left empty, the tracing hooks remain in place but the process uses a noop tracer provider.
+
+## OpenAPI Docs
+
+The app serves generated Swagger UI at `http://localhost:8080/swagger/index.html`.
+
+The generated spec files live in [docs](/c:/Users/Trelobarbouni/Documents/GitHub/go-personal-finance-tracker/docs) and are built from route annotations in the handlers and controllers.
+
+To regenerate them after API changes:
+
+```sh
+go generate ./docs
+```
 
 ## Quick API Walkthrough
 

@@ -29,6 +29,18 @@ type createBudgetRequest struct {
 }
 
 // CreateBudget adds a new budget
+// @Summary Create a budget
+// @Description Create a budget for the authenticated user.
+// @Tags budgets
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param payload body createBudgetRequest true "Budget payload"
+// @Success 201 {object} messageResponse
+// @Failure 400 {object} httpapi.ErrorResponse
+// @Failure 401 {object} httpapi.ErrorResponse
+// @Failure 500 {object} httpapi.ErrorResponse
+// @Router /api/v1/budgets [post]
 func (bc *BudgetController) CreateBudget(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -78,6 +90,18 @@ func (bc *BudgetController) GetBudgets(c *gin.Context) {
 }
 
 // GetBudgetsPage fetches a paginated budget list for a user.
+// @Summary List budgets
+// @Description List the authenticated user's budgets with pagination.
+// @Tags budgets
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number" minimum(1)
+// @Param page_size query int false "Items per page" minimum(1) maximum(100)
+// @Success 200 {object} budgetPageResponse
+// @Failure 400 {object} httpapi.ErrorResponse
+// @Failure 401 {object} httpapi.ErrorResponse
+// @Failure 500 {object} httpapi.ErrorResponse
+// @Router /api/v1/budgets [get]
 func (bc *BudgetController) GetBudgetsPage(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -105,6 +129,18 @@ func (bc *BudgetController) GetBudgetsPage(c *gin.Context) {
 }
 
 // DeleteBudget removes a budget
+// @Summary Delete a budget
+// @Description Delete one of the authenticated user's budgets.
+// @Tags budgets
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Budget ID" minimum(1)
+// @Success 200 {object} messageResponse
+// @Failure 400 {object} httpapi.ErrorResponse
+// @Failure 401 {object} httpapi.ErrorResponse
+// @Failure 404 {object} httpapi.ErrorResponse
+// @Failure 500 {object} httpapi.ErrorResponse
+// @Router /api/v1/budgets/{id} [delete]
 func (bc *BudgetController) DeleteBudget(c *gin.Context) {
 	ctx := c.Request.Context()
 

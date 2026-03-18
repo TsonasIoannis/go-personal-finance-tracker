@@ -18,6 +18,16 @@ import (
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/persistence"
 )
 
+// @title Personal Finance Tracker API
+// @version 1.0
+// @description Personal Finance Tracker API with JWT auth, pagination, filtering, and observability hooks.
+// @BasePath /
+// @schemes http https
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Provide the JWT as `Bearer <token>`.
+
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
