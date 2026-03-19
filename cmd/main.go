@@ -22,11 +22,12 @@ import (
 // @version 1.0
 // @description Personal Finance Tracker API with JWT auth, pagination, filtering, and observability hooks.
 // @BasePath /
-// @schemes http https
+// @schemes https
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
 // @description Provide the JWT as `Bearer <token>`.
+// @security BearerAuth
 
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))

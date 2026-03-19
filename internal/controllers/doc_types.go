@@ -20,7 +20,7 @@ type authResponse struct {
 //
 //nolint:unused
 type transactionPageResponse struct {
-	Data       []transactionResponse `json:"data"`
+	Data       []transactionResponse `json:"data" maxItems:"100"`
 	Pagination paginationResponse    `json:"pagination"`
 }
 
@@ -28,6 +28,6 @@ type transactionPageResponse struct {
 //
 //nolint:unused
 type budgetPageResponse struct {
-	Data       []budgetResponse   `json:"data"`
+	Data       []budgetResponse   `json:"data" maxItems:"100"`
 	Pagination paginationResponse `json:"pagination"`
 }

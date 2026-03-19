@@ -204,13 +204,9 @@ If `OTEL_EXPORTER_OTLP_ENDPOINT` is left empty, the tracing hooks remain in plac
 
 The app serves generated Swagger UI at `http://localhost:8080/swagger/index.html`.
 
-The generated spec files live in [docs](/c:/Users/Trelobarbouni/Documents/GitHub/go-personal-finance-tracker/docs) and are built from route annotations in the handlers and controllers.
+The raw OpenAPI document is served at `http://localhost:8080/openapi.json`.
 
-To regenerate them after API changes:
-
-```sh
-go generate ./docs
-```
+The committed OpenAPI spec lives in [swagger.json](/c:/Users/Trelobarbouni/Documents/GitHub/go-personal-finance-tracker/docs/swagger.json) and is embedded directly into the app binary.
 
 ## Quick API Walkthrough
 

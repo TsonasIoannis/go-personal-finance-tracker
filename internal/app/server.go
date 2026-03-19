@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	_ "github.com/TsonasIoannis/go-personal-finance-tracker/docs" // Register generated Swagger docs.
+	"github.com/TsonasIoannis/go-personal-finance-tracker/docs"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/auth"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/config"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/controllers"
@@ -61,7 +61,10 @@ func newRouter(cfg config.Config, db database.Database, repositories persistence
 	router.GET("/metrics", gin.WrapH(metrics.Handler()))
 	router.GET("/health", handlers.HealthCheckHandler)
 	router.GET("/ready", handlers.ReadinessCheckHandler(db))
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	router.GET("/openapi.json", func(c *gin.Context) {
+		c.Data(http.StatusOK, "application/json; charset=utf-8", docs.SwaggerJSON)
+	})
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, ginSwagger.URL("/openapi.json")))
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "Welcome to the Personal Finance Tracker API!"})
 	})
