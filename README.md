@@ -125,7 +125,7 @@ Start the API and PostgreSQL:
 docker-compose up --build
 ```
 
-The containerized app uses the same environment variables as the native process, so you can move between `go run` and Compose without code changes.
+The app is built from the repo Dockerfile, and the compose stack also starts a dedicated Swagger UI service at `http://localhost:8081`.
 
 Then verify the service:
 
@@ -203,6 +203,8 @@ If `OTEL_EXPORTER_OTLP_ENDPOINT` is left empty, the tracing hooks remain in plac
 ## OpenAPI Docs
 
 The app serves generated Swagger UI at `http://localhost:8080/swagger/index.html`.
+
+The Docker Compose stack also serves Swagger UI at `http://localhost:8081`.
 
 The raw OpenAPI document is served at `http://localhost:8080/openapi.json`.
 
