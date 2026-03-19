@@ -125,7 +125,7 @@ Start the API and PostgreSQL:
 docker-compose up --build
 ```
 
-The app is built from the repo Dockerfile, and the compose stack also starts a dedicated Swagger UI service at `http://localhost:8081`.
+The app is built from the repository Dockerfile, and the compose stack also starts a dedicated Swagger UI service at `http://localhost:8081`.
 
 Then verify the service:
 
