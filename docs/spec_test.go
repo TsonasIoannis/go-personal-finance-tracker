@@ -5,14 +5,15 @@ import (
 	"testing"
 )
 
-func TestSwaggerJSONPublicOperationsOverrideGlobalSecurity(t *testing.T) {
+func TestSwaggerJSONSecurityShape(t *testing.T) {
 	var document map[string]any
 	if err := json.Unmarshal(SwaggerJSON, &document); err != nil {
 		t.Fatalf("failed to parse embedded swagger json: %v", err)
 	}
 
-	if _, ok := document["security"]; ok {
-		t.Fatal("expected no global security requirement in swagger document")
+	security, ok := document["security"].([]any)
+	if !ok || len(security) != 1 {
+		t.Fatalf("expected one global security requirement, got %v", document["security"])
 	}
 
 	paths, ok := document["paths"].(map[string]any)
@@ -20,15 +21,15 @@ func TestSwaggerJSONPublicOperationsOverrideGlobalSecurity(t *testing.T) {
 		t.Fatal("expected paths object in swagger document")
 	}
 
-	assertOperationHasNoSecurity(t, paths, "/api/v1/login", "post")
-	assertOperationHasNoSecurity(t, paths, "/api/v1/register", "post")
-	assertOperationHasNoSecurity(t, paths, "/health", "get")
-	assertOperationHasNoSecurity(t, paths, "/ready", "get")
+	assertOperationHasAnonymousOverride(t, paths, "/api/v1/login", "post")
+	assertOperationHasAnonymousOverride(t, paths, "/api/v1/register", "post")
+	assertOperationHasAnonymousOverride(t, paths, "/health", "get")
+	assertOperationHasAnonymousOverride(t, paths, "/ready", "get")
 	assertOperationHasBearerSecurity(t, paths, "/api/v1/transactions", "get")
 	assertOperationHasBearerSecurity(t, paths, "/api/v1/budgets", "get")
 }
 
-func assertOperationHasNoSecurity(t *testing.T, paths map[string]any, route string, method string) {
+func assertOperationHasAnonymousOverride(t *testing.T, paths map[string]any, route string, method string) {
 	t.Helper()
 
 	pathItem, ok := paths[route].(map[string]any)
@@ -41,8 +42,18 @@ func assertOperationHasNoSecurity(t *testing.T, paths map[string]any, route stri
 		t.Fatalf("expected %s operation for %s", method, route)
 	}
 
-	if _, ok := operation["security"]; ok {
-		t.Fatalf("expected no explicit security for %s %s", method, route)
+	security, ok := operation["security"].([]any)
+	if !ok || len(security) != 1 {
+		t.Fatalf("expected anonymous override for %s %s, got %v", method, route, operation["security"])
+	}
+
+	requirement, ok := security[0].(map[string]any)
+	if !ok {
+		t.Fatalf("expected security requirement object for %s %s", method, route)
+	}
+
+	if len(requirement) != 0 {
+		t.Fatalf("expected empty security requirement object for %s %s, got %v", method, route, requirement)
 	}
 }
 
