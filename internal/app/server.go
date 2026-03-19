@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	_ "github.com/TsonasIoannis/go-personal-finance-tracker/docs"
+	_ "github.com/TsonasIoannis/go-personal-finance-tracker/docs" // Register generated Swagger docs.
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/auth"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/config"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/controllers"
