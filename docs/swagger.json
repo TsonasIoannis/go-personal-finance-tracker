@@ -443,7 +443,6 @@
             }
           }
         },
-        "security": [],
         "summary": "Log in a user",
         "tags": ["auth"]
       }
@@ -490,7 +489,6 @@
             }
           }
         },
-        "security": [],
         "summary": "Register a new user",
         "tags": ["auth"]
       }
@@ -693,7 +691,6 @@
             }
           }
         },
-        "security": [],
         "summary": "Health check",
         "tags": ["system"]
       }
@@ -716,18 +713,12 @@
             }
           }
         },
-        "security": [],
         "summary": "Readiness check",
         "tags": ["system"]
       }
     }
   },
   "schemes": ["https"],
-  "security": [
-    {
-      "BearerAuth": []
-    }
-  ],
   "securityDefinitions": {
     "BearerAuth": {
       "description": "Provide the JWT as `Bearer \u003ctoken\u003e`.",
