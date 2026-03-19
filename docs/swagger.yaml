@@ -7,16 +7,16 @@ definitions:
       token:
         type: string
       user:
-        $ref: '#/definitions/controllers.userResponse'
+        $ref: "#/definitions/controllers.userResponse"
     type: object
   controllers.budgetPageResponse:
     properties:
       data:
         items:
-          $ref: '#/definitions/controllers.budgetResponse'
+          $ref: "#/definitions/controllers.budgetResponse"
         type: array
       pagination:
-        $ref: '#/definitions/controllers.paginationResponse'
+        $ref: "#/definitions/controllers.paginationResponse"
     type: object
   controllers.budgetResponse:
     properties:
@@ -44,9 +44,9 @@ definitions:
       start_date:
         type: string
     required:
-    - category_id
-    - end_date
-    - start_date
+      - category_id
+      - end_date
+      - start_date
     type: object
   controllers.createTransactionRequest:
     properties:
@@ -61,10 +61,10 @@ definitions:
       type:
         type: string
     required:
-    - amount
-    - category_id
-    - date
-    - type
+      - amount
+      - category_id
+      - date
+      - type
     type: object
   controllers.loginRequest:
     properties:
@@ -73,8 +73,8 @@ definitions:
       password:
         type: string
     required:
-    - email
-    - password
+      - email
+      - password
     type: object
   controllers.messageResponse:
     properties:
@@ -102,18 +102,18 @@ definitions:
         minLength: 8
         type: string
     required:
-    - email
-    - name
-    - password
+      - email
+      - name
+      - password
     type: object
   controllers.transactionPageResponse:
     properties:
       data:
         items:
-          $ref: '#/definitions/controllers.transactionResponse'
+          $ref: "#/definitions/controllers.transactionResponse"
         type: array
       pagination:
-        $ref: '#/definitions/controllers.paginationResponse'
+        $ref: "#/definitions/controllers.paginationResponse"
     type: object
   controllers.transactionResponse:
     properties:
@@ -160,11 +160,12 @@ definitions:
   httpapi.ErrorResponse:
     properties:
       error:
-        $ref: '#/definitions/httpapi.ErrorDetail'
+        $ref: "#/definitions/httpapi.ErrorDetail"
     type: object
 info:
   contact: {}
-  description: Personal Finance Tracker API with JWT auth, pagination, filtering,
+  description:
+    Personal Finance Tracker API with JWT auth, pagination, filtering,
     and observability hooks.
   title: Personal Finance Tracker API
   version: "1.0"
@@ -173,348 +174,349 @@ paths:
     get:
       description: List the authenticated user's budgets with pagination.
       parameters:
-      - description: Page number
-        in: query
-        minimum: 1
-        name: page
-        type: integer
-      - description: Items per page
-        in: query
-        maximum: 100
-        minimum: 1
-        name: page_size
-        type: integer
+        - description: Page number
+          in: query
+          minimum: 1
+          name: page
+          type: integer
+        - description: Items per page
+          in: query
+          maximum: 100
+          minimum: 1
+          name: page_size
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/controllers.budgetPageResponse'
+            $ref: "#/definitions/controllers.budgetPageResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: List budgets
       tags:
-      - budgets
+        - budgets
     post:
       consumes:
-      - application/json
+        - application/json
       description: Create a budget for the authenticated user.
       parameters:
-      - description: Budget payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.createBudgetRequest'
+        - description: Budget payload
+          in: body
+          name: payload
+          required: true
+          schema:
+            $ref: "#/definitions/controllers.createBudgetRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/controllers.messageResponse'
+            $ref: "#/definitions/controllers.messageResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Create a budget
       tags:
-      - budgets
+        - budgets
   /api/v1/budgets/{id}:
     delete:
       description: Delete one of the authenticated user's budgets.
       parameters:
-      - description: Budget ID
-        in: path
-        minimum: 1
-        name: id
-        required: true
-        type: integer
+        - description: Budget ID
+          in: path
+          minimum: 1
+          name: id
+          required: true
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/controllers.messageResponse'
+            $ref: "#/definitions/controllers.messageResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Delete a budget
       tags:
-      - budgets
+        - budgets
   /api/v1/login:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Authenticate a user and return a signed auth token.
       parameters:
-      - description: Login payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.loginRequest'
+        - description: Login payload
+          in: body
+          name: payload
+          required: true
+          schema:
+            $ref: "#/definitions/controllers.loginRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/controllers.authResponse'
+            $ref: "#/definitions/controllers.authResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
       summary: Log in a user
       tags:
-      - auth
+        - auth
   /api/v1/register:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Create a user account and return a signed auth token.
       parameters:
-      - description: Registration payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.registerRequest'
+        - description: Registration payload
+          in: body
+          name: payload
+          required: true
+          schema:
+            $ref: "#/definitions/controllers.registerRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/controllers.authResponse'
+            $ref: "#/definitions/controllers.authResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
       summary: Register a new user
       tags:
-      - auth
+        - auth
   /api/v1/transactions:
     get:
-      description: List the authenticated user's transactions with pagination and
+      description:
+        List the authenticated user's transactions with pagination and
         optional filtering.
       parameters:
-      - description: Page number
-        in: query
-        minimum: 1
-        name: page
-        type: integer
-      - description: Items per page
-        in: query
-        maximum: 100
-        minimum: 1
-        name: page_size
-        type: integer
-      - description: Transaction type
-        enum:
-        - income
-        - expense
-        in: query
-        name: type
-        type: string
-      - description: Category ID
-        in: query
-        minimum: 1
-        name: category_id
-        type: integer
-      - description: Start date/time filter (RFC3339 or YYYY-MM-DD)
-        in: query
-        name: from
-        type: string
-      - description: End date/time filter (RFC3339 or YYYY-MM-DD)
-        in: query
-        name: to
-        type: string
+        - description: Page number
+          in: query
+          minimum: 1
+          name: page
+          type: integer
+        - description: Items per page
+          in: query
+          maximum: 100
+          minimum: 1
+          name: page_size
+          type: integer
+        - description: Transaction type
+          enum:
+            - income
+            - expense
+          in: query
+          name: type
+          type: string
+        - description: Category ID
+          in: query
+          minimum: 1
+          name: category_id
+          type: integer
+        - description: Start date/time filter (RFC3339 or YYYY-MM-DD)
+          in: query
+          name: from
+          type: string
+        - description: End date/time filter (RFC3339 or YYYY-MM-DD)
+          in: query
+          name: to
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/controllers.transactionPageResponse'
+            $ref: "#/definitions/controllers.transactionPageResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: List transactions
       tags:
-      - transactions
+        - transactions
     post:
       consumes:
-      - application/json
+        - application/json
       description: Create a transaction for the authenticated user.
       parameters:
-      - description: Transaction payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.createTransactionRequest'
+        - description: Transaction payload
+          in: body
+          name: payload
+          required: true
+          schema:
+            $ref: "#/definitions/controllers.createTransactionRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/controllers.messageResponse'
+            $ref: "#/definitions/controllers.messageResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Create a transaction
       tags:
-      - transactions
+        - transactions
   /api/v1/transactions/{id}:
     delete:
       description: Delete one of the authenticated user's transactions.
       parameters:
-      - description: Transaction ID
-        in: path
-        minimum: 1
-        name: id
-        required: true
-        type: integer
+        - description: Transaction ID
+          in: path
+          minimum: 1
+          name: id
+          required: true
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/controllers.messageResponse'
+            $ref: "#/definitions/controllers.messageResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Delete a transaction
       tags:
-      - transactions
+        - transactions
   /health:
     get:
       description: Liveness probe for the API process.
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.StatusResponse'
+            $ref: "#/definitions/handlers.StatusResponse"
       summary: Health check
       tags:
-      - system
+        - system
   /ready:
     get:
       description: Readiness probe backed by the database connection.
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.StatusResponse'
+            $ref: "#/definitions/handlers.StatusResponse"
         "503":
           description: Service Unavailable
           schema:
-            $ref: '#/definitions/httpapi.ErrorResponse'
+            $ref: "#/definitions/httpapi.ErrorResponse"
       summary: Readiness check
       tags:
-      - system
+        - system
 schemes:
-- http
-- https
+  - http
+  - https
 securityDefinitions:
   BearerAuth:
     description: Provide the JWT as `Bearer <token>`.

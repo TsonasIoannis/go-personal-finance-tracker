@@ -41,27 +41,27 @@ It demonstrates:
 
 ### Public
 
-| Method | Endpoint    | Description                            |
-| ------ | ----------- | -------------------------------------- |
-| POST   | `/api/v1/register` | Register a user and return a token |
-| POST   | `/api/v1/login`    | Authenticate a user and return a token |
-| GET    | `/health`   | Liveness probe                         |
-| GET    | `/ready`    | Readiness probe backed by the database |
-| GET    | `/metrics`  | Prometheus metrics endpoint            |
-| GET    | `/swagger/index.html` | Interactive OpenAPI docs          |
+| Method | Endpoint              | Description                            |
+| ------ | --------------------- | -------------------------------------- |
+| POST   | `/api/v1/register`    | Register a user and return a token     |
+| POST   | `/api/v1/login`       | Authenticate a user and return a token |
+| GET    | `/health`             | Liveness probe                         |
+| GET    | `/ready`              | Readiness probe backed by the database |
+| GET    | `/metrics`            | Prometheus metrics endpoint            |
+| GET    | `/swagger/index.html` | Interactive OpenAPI docs               |
 
 ### Protected
 
 These endpoints require `Authorization: Bearer <token>`.
 
-| Method | Endpoint            | Description                                         |
-| ------ | ------------------- | --------------------------------------------------- |
+| Method | Endpoint                   | Description                                                                     |
+| ------ | -------------------------- | ------------------------------------------------------------------------------- |
 | GET    | `/api/v1/transactions`     | List the authenticated user's transactions with pagination and optional filters |
-| POST   | `/api/v1/transactions`     | Create a transaction for the authenticated user |
-| DELETE | `/api/v1/transactions/:id` | Delete one of the authenticated user's transactions |
-| GET    | `/api/v1/budgets`          | List the authenticated user's budgets with `page` and `page_size` |
-| POST   | `/api/v1/budgets`          | Create a budget for the authenticated user    |
-| DELETE | `/api/v1/budgets/:id`      | Delete one of the authenticated user's budgets |
+| POST   | `/api/v1/transactions`     | Create a transaction for the authenticated user                                 |
+| DELETE | `/api/v1/transactions/:id` | Delete one of the authenticated user's transactions                             |
+| GET    | `/api/v1/budgets`          | List the authenticated user's budgets with `page` and `page_size`               |
+| POST   | `/api/v1/budgets`          | Create a budget for the authenticated user                                      |
+| DELETE | `/api/v1/budgets/:id`      | Delete one of the authenticated user's budgets                                  |
 
 Legacy unversioned endpoints remain available for compatibility during the transition to `/api/v1`.
 
