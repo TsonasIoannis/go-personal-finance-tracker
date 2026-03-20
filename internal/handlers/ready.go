@@ -10,6 +10,13 @@ import (
 )
 
 // ReadinessCheckHandler checks if the service is ready (i.e., DB is available)
+// @Summary Readiness check
+// @Description Readiness probe backed by the database connection.
+// @Tags system
+// @Produce json
+// @Success 200 {object} StatusResponse
+// @Failure 503 {object} httpapi.ErrorResponse
+// @Router /ready [get]
 func ReadinessCheckHandler(db database.Database) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if db == nil {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/repositories"
 )
 
@@ -58,6 +59,16 @@ func (s *DefaultBudgetService) GetBudgetsByUser(ctx context.Context, userID uint
 	}
 
 	return budgets, nil
+}
+
+// GetBudgetsPageByUser retrieves a paginated budget list for a user.
+func (s *DefaultBudgetService) GetBudgetsPageByUser(ctx context.Context, userID uint, params pagination.Params) ([]models.Budget, int64, error) {
+	budgets, total, err := s.budgetRepo.GetBudgetsPageByUserID(ctx, userID, params)
+	if err != nil {
+		return nil, 0, apperrors.Internal("budgets_fetch_failed", "failed to retrieve budgets", err)
+	}
+
+	return budgets, total, nil
 }
 
 // DeleteBudgetForUser removes a budget that belongs to the authenticated user.

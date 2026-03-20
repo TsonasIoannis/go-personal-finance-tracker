@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/TsonasIoannis/go-personal-finance-tracker/docs"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/auth"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/config"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/controllers"
@@ -15,6 +16,8 @@ import (
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/routes"
 	services "github.com/TsonasIoannis/go-personal-finance-tracker/internal/services/default"
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func NewHTTPServer(cfg config.Config, db database.Database, repositories persistence.Repositories) *http.Server {
@@ -58,6 +61,10 @@ func newRouter(cfg config.Config, db database.Database, repositories persistence
 	router.GET("/metrics", gin.WrapH(metrics.Handler()))
 	router.GET("/health", handlers.HealthCheckHandler)
 	router.GET("/ready", handlers.ReadinessCheckHandler(db))
+	router.GET("/openapi.json", func(c *gin.Context) {
+		c.Data(http.StatusOK, "application/json; charset=utf-8", docs.SwaggerJSON)
+	})
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, ginSwagger.URL("/openapi.json")))
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "Welcome to the Personal Finance Tracker API!"})
 	})

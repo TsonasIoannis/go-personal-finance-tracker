@@ -7,6 +7,7 @@ import (
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
@@ -116,6 +117,26 @@ func TestGetBudgetsByUserID(t *testing.T) {
 		budgets, err := repo.GetBudgetsByUserID(ctx, 9999) // Non-existent user
 		assert.NoError(t, err)
 		assert.Len(t, budgets, 0)
+	})
+
+	t.Run("GetBudgetsPageByUserID", func(t *testing.T) {
+		db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.Budget{})
+
+		for i := 0; i < 3; i++ {
+			err := repo.CreateBudget(ctx, &models.Budget{
+				UserID:     1,
+				CategoryID: uint(i + 1),
+				Limit:      float64((i + 1) * 100),
+				StartDate:  time.Now().AddDate(0, 0, i),
+				EndDate:    time.Now().AddDate(0, 1, i),
+			})
+			assert.NoError(t, err)
+		}
+
+		budgets, total, err := repo.GetBudgetsPageByUserID(ctx, 1, pagination.New(2, 1))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(3), total)
+		assert.Len(t, budgets, 1)
 	})
 }
 

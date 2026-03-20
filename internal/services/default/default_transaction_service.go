@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/apperrors"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/filters"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/repositories"
 )
 
@@ -41,13 +43,23 @@ func (s *DefaultTransactionService) AddTransaction(ctx context.Context, transact
 }
 
 // GetTransactionsByUser retrieves all transactions for a user
-func (s *DefaultTransactionService) GetTransactionsByUser(ctx context.Context, userID uint) ([]models.Transaction, error) {
-	transactions, err := s.transactionRepo.GetTransactionsByUserID(ctx, userID)
+func (s *DefaultTransactionService) GetTransactionsByUser(ctx context.Context, userID uint, transactionFilters filters.TransactionFilters) ([]models.Transaction, error) {
+	transactions, err := s.transactionRepo.GetTransactionsByUserID(ctx, userID, transactionFilters)
 	if err != nil {
 		return nil, apperrors.Internal("transactions_fetch_failed", "failed to retrieve transactions", err)
 	}
 
 	return transactions, nil
+}
+
+// GetTransactionsPageByUser retrieves a paginated transaction list for a user.
+func (s *DefaultTransactionService) GetTransactionsPageByUser(ctx context.Context, userID uint, params pagination.Params, transactionFilters filters.TransactionFilters) ([]models.Transaction, int64, error) {
+	transactions, total, err := s.transactionRepo.GetTransactionsPageByUserID(ctx, userID, params, transactionFilters)
+	if err != nil {
+		return nil, 0, apperrors.Internal("transactions_fetch_failed", "failed to retrieve transactions", err)
+	}
+
+	return transactions, total, nil
 }
 
 // DeleteTransactionForUser removes a transaction that belongs to the authenticated user.

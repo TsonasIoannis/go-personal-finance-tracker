@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/database"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/filters"
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
@@ -83,9 +85,55 @@ func TestTransactionRepository(t *testing.T) {
 		err2 := repo.CreateTransaction(ctx, &models.Transaction{UserID: user.ID, Type: "income", Amount: 150, CategoryID: 2, Date: time.Now()})
 		assert.NoError(t, err2)
 
-		transactions, err := repo.GetTransactionsByUserID(ctx, user.ID)
+		transactions, err := repo.GetTransactionsByUserID(ctx, user.ID, filters.TransactionFilters{})
 		assert.NoError(t, err)
 		assert.Len(t, transactions, 2) // Ensure we only have 2 transactions
+	})
+
+	t.Run("GetTransactionsByUserID_WithFilters", func(t *testing.T) {
+		db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.Transaction{})
+
+		expenseDate := time.Date(2026, 3, 1, 10, 0, 0, 0, time.UTC)
+		incomeDate := time.Date(2026, 3, 15, 10, 0, 0, 0, time.UTC)
+
+		err := repo.CreateTransaction(ctx, &models.Transaction{UserID: user.ID, Type: "expense", Amount: 50, CategoryID: 1, Date: expenseDate})
+		assert.NoError(t, err)
+		err = repo.CreateTransaction(ctx, &models.Transaction{UserID: user.ID, Type: "income", Amount: 150, CategoryID: 2, Date: incomeDate})
+		assert.NoError(t, err)
+
+		categoryID := uint(2)
+		transactionFilters := filters.TransactionFilters{
+			Type:       "income",
+			CategoryID: &categoryID,
+			From:       ptrTime(time.Date(2026, 3, 10, 0, 0, 0, 0, time.UTC)),
+			To:         ptrTime(time.Date(2026, 3, 31, 23, 59, 59, 0, time.UTC)),
+		}
+
+		transactions, err := repo.GetTransactionsByUserID(ctx, user.ID, transactionFilters)
+		assert.NoError(t, err)
+		assert.Len(t, transactions, 1)
+		assert.Equal(t, "income", transactions[0].Type)
+		assert.Equal(t, uint(2), transactions[0].CategoryID)
+	})
+
+	t.Run("GetTransactionsPageByUserID", func(t *testing.T) {
+		db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.Transaction{})
+
+		for i := 0; i < 3; i++ {
+			err := repo.CreateTransaction(ctx, &models.Transaction{
+				UserID:     user.ID,
+				Type:       "expense",
+				Amount:     float64(i + 1),
+				CategoryID: 1,
+				Date:       time.Now().Add(time.Duration(i) * time.Minute),
+			})
+			assert.NoError(t, err)
+		}
+
+		transactions, total, err := repo.GetTransactionsPageByUserID(ctx, user.ID, pagination.New(2, 1), filters.TransactionFilters{})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(3), total)
+		assert.Len(t, transactions, 1)
 	})
 
 	t.Run("UpdateTransaction", func(t *testing.T) {
@@ -133,4 +181,8 @@ func TestTransactionRepository(t *testing.T) {
 		assert.Error(t, err) // Should return an error because it's deleted
 		assert.Equal(t, gorm.ErrRecordNotFound, err)
 	})
+}
+
+func ptrTime(value time.Time) *time.Time {
+	return &value
 }

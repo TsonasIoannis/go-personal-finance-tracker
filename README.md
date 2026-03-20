@@ -41,26 +41,29 @@ It demonstrates:
 
 ### Public
 
-| Method | Endpoint    | Description                            |
-| ------ | ----------- | -------------------------------------- |
-| POST   | `/register` | Register a user and return a token     |
-| POST   | `/login`    | Authenticate a user and return a token |
-| GET    | `/health`   | Liveness probe                         |
-| GET    | `/ready`    | Readiness probe backed by the database |
-| GET    | `/metrics`  | Prometheus metrics endpoint            |
+| Method | Endpoint              | Description                            |
+| ------ | --------------------- | -------------------------------------- |
+| POST   | `/api/v1/register`    | Register a user and return a token     |
+| POST   | `/api/v1/login`       | Authenticate a user and return a token |
+| GET    | `/health`             | Liveness probe                         |
+| GET    | `/ready`              | Readiness probe backed by the database |
+| GET    | `/metrics`            | Prometheus metrics endpoint            |
+| GET    | `/swagger/index.html` | Interactive OpenAPI docs               |
 
 ### Protected
 
 These endpoints require `Authorization: Bearer <token>`.
 
-| Method | Endpoint            | Description                                         |
-| ------ | ------------------- | --------------------------------------------------- |
-| GET    | `/transactions`     | List the authenticated user's transactions          |
-| POST   | `/transactions`     | Create a transaction for the authenticated user     |
-| DELETE | `/transactions/:id` | Delete one of the authenticated user's transactions |
-| GET    | `/budgets`          | List the authenticated user's budgets               |
-| POST   | `/budgets`          | Create a budget for the authenticated user          |
-| DELETE | `/budgets/:id`      | Delete one of the authenticated user's budgets      |
+| Method | Endpoint                   | Description                                                                     |
+| ------ | -------------------------- | ------------------------------------------------------------------------------- |
+| GET    | `/api/v1/transactions`     | List the authenticated user's transactions with pagination and optional filters |
+| POST   | `/api/v1/transactions`     | Create a transaction for the authenticated user                                 |
+| DELETE | `/api/v1/transactions/:id` | Delete one of the authenticated user's transactions                             |
+| GET    | `/api/v1/budgets`          | List the authenticated user's budgets with `page` and `page_size`               |
+| POST   | `/api/v1/budgets`          | Create a budget for the authenticated user                                      |
+| DELETE | `/api/v1/budgets/:id`      | Delete one of the authenticated user's budgets                                  |
+
+Legacy unversioned endpoints remain available for compatibility during the transition to `/api/v1`.
 
 ## Project Structure
 
@@ -122,7 +125,7 @@ Start the API and PostgreSQL:
 docker-compose up --build
 ```
 
-The containerized app uses the same environment variables as the native process, so you can move between `go run` and Compose without code changes.
+The app is built from the repository Dockerfile, and the compose stack also starts a dedicated Swagger UI service at `http://localhost:8081`.
 
 Then verify the service:
 
@@ -197,12 +200,22 @@ $env:OTEL_TRACES_SAMPLER_ARG="0.25"
 
 If `OTEL_EXPORTER_OTLP_ENDPOINT` is left empty, the tracing hooks remain in place but the process uses a noop tracer provider.
 
+## OpenAPI Docs
+
+The app serves generated Swagger UI at `http://localhost:8080/swagger/index.html`.
+
+The Docker Compose stack also serves Swagger UI at `http://localhost:8081`.
+
+The raw OpenAPI document is served at `http://localhost:8080/openapi.json`.
+
+The committed OpenAPI spec lives in [swagger.json](/c:/Users/Trelobarbouni/Documents/GitHub/go-personal-finance-tracker/docs/swagger.json) and is embedded directly into the app binary.
+
 ## Quick API Walkthrough
 
 Register:
 
 ```sh
-curl -X POST http://localhost:8080/register \
+curl -X POST http://localhost:8080/api/v1/register \
   -H "Content-Type: application/json" \
   -d '{"name":"Alan","email":"alan@example.com","password":"secure123"}'
 ```
@@ -210,7 +223,7 @@ curl -X POST http://localhost:8080/register \
 Login:
 
 ```sh
-curl -X POST http://localhost:8080/login \
+curl -X POST http://localhost:8080/api/v1/login \
   -H "Content-Type: application/json" \
   -d '{"email":"alan@example.com","password":"secure123"}'
 ```
@@ -218,7 +231,7 @@ curl -X POST http://localhost:8080/login \
 Create a budget:
 
 ```sh
-curl -X POST http://localhost:8080/budgets \
+curl -X POST http://localhost:8080/api/v1/budgets \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"category_id":1,"limit":500,"start_date":"2026-03-01T00:00:00Z","end_date":"2026-03-31T23:59:59Z"}'
@@ -227,18 +240,22 @@ curl -X POST http://localhost:8080/budgets \
 Create a transaction:
 
 ```sh
-curl -X POST http://localhost:8080/transactions \
+curl -X POST http://localhost:8080/api/v1/transactions \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"type":"expense","amount":42.5,"category_id":1,"date":"2026-03-15T12:00:00Z","note":"Groceries"}'
 ```
 
-List data:
+List paginated data:
 
 ```sh
-curl http://localhost:8080/budgets -H "Authorization: Bearer <token>"
-curl http://localhost:8080/transactions -H "Authorization: Bearer <token>"
+curl "http://localhost:8080/api/v1/budgets?page=1&page_size=20" -H "Authorization: Bearer <token>"
+curl "http://localhost:8080/api/v1/transactions?page=1&page_size=20" -H "Authorization: Bearer <token>"
+curl "http://localhost:8080/api/v1/transactions?page=1&page_size=20&type=expense&category_id=1" -H "Authorization: Bearer <token>"
+curl "http://localhost:8080/api/v1/transactions?page=1&page_size=20&from=2026-03-01&to=2026-03-31" -H "Authorization: Bearer <token>"
 ```
+
+The versioned list endpoints now respond with a `data` array plus a `pagination` object. `/api/v1/transactions` also supports `type`, `category_id`, `from`, and `to` filters. The `from` and `to` values accept either RFC3339 timestamps or `YYYY-MM-DD`. Legacy unversioned list endpoints remain array-shaped during the compatibility window.
 
 ## Testing
 
@@ -272,7 +289,7 @@ Successful responses are still resource-specific for now, while error responses 
 ## Notes
 
 - This project is intentionally scoped as an illustration repository rather than a production-complete finance platform.
-- The current API returns model-shaped JSON for budgets and transactions. That is a reasonable next refinement for a follow-up branch.
+- The legacy unversioned list endpoints still return model-shaped arrays for compatibility, while `/api/v1` list endpoints return paginated envelopes.
 - Budget enforcement currently validates the transaction against the matching budget limit, but not yet against accumulated spending over a period.
 
 ## License

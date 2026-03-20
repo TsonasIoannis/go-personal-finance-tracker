@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/models"
+	"github.com/TsonasIoannis/go-personal-finance-tracker/internal/pagination"
 )
 
 type transactionResponse struct {
@@ -25,6 +26,18 @@ type budgetResponse struct {
 	Limit      float64   `json:"limit"`
 	StartDate  time.Time `json:"start_date"`
 	EndDate    time.Time `json:"end_date"`
+}
+
+type paginationResponse struct {
+	Page       int   `json:"page"`
+	PageSize   int   `json:"page_size"`
+	Total      int64 `json:"total"`
+	TotalPages int   `json:"total_pages"`
+}
+
+type paginatedResponse[T any] struct {
+	Data       []T                `json:"data"`
+	Pagination paginationResponse `json:"pagination"`
 }
 
 func newTransactionResponse(transaction models.Transaction) transactionResponse {
@@ -66,4 +79,13 @@ func newBudgetResponses(budgets []models.Budget) []budgetResponse {
 		responses = append(responses, newBudgetResponse(budget))
 	}
 	return responses
+}
+
+func newPaginationResponse(params pagination.Params, total int64) paginationResponse {
+	return paginationResponse{
+		Page:       params.Page,
+		PageSize:   params.PageSize,
+		Total:      total,
+		TotalPages: pagination.TotalPages(total, params.PageSize),
+	}
 }

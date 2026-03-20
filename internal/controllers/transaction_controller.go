@@ -29,6 +29,18 @@ type createTransactionRequest struct {
 }
 
 // CreateTransaction adds a new transaction
+// @Summary Create a transaction
+// @Description Create a transaction for the authenticated user.
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param payload body createTransactionRequest true "Transaction payload"
+// @Success 201 {object} messageResponse
+// @Failure 400 {object} httpapi.ErrorResponse
+// @Failure 401 {object} httpapi.ErrorResponse
+// @Failure 500 {object} httpapi.ErrorResponse
+// @Router /api/v1/transactions [post]
 func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -70,7 +82,13 @@ func (tc *TransactionController) GetTransactions(c *gin.Context) {
 		return
 	}
 
-	transactions, err := tc.transactionService.GetTransactionsByUser(ctx, userID)
+	transactionFilters, err := parseTransactionFilters(c)
+	if err != nil {
+		httpapi.WriteError(c, err)
+		return
+	}
+
+	transactions, err := tc.transactionService.GetTransactionsByUser(ctx, userID, transactionFilters)
 	if err != nil {
 		httpapi.WriteError(c, err)
 		return
@@ -79,7 +97,68 @@ func (tc *TransactionController) GetTransactions(c *gin.Context) {
 	c.JSON(http.StatusOK, newTransactionResponses(transactions))
 }
 
+// GetTransactionsPage fetches a paginated transaction list for a user.
+// @Summary List transactions
+// @Description List the authenticated user's transactions with pagination and optional filtering.
+// @Tags transactions
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number" minimum(1)
+// @Param page_size query int false "Items per page" minimum(1) maximum(100)
+// @Param type query string false "Transaction type" Enums(income, expense)
+// @Param category_id query int false "Category ID" minimum(1)
+// @Param from query string false "Start date/time filter (RFC3339 or YYYY-MM-DD)"
+// @Param to query string false "End date/time filter (RFC3339 or YYYY-MM-DD)"
+// @Success 200 {object} transactionPageResponse
+// @Failure 400 {object} httpapi.ErrorResponse
+// @Failure 401 {object} httpapi.ErrorResponse
+// @Failure 500 {object} httpapi.ErrorResponse
+// @Router /api/v1/transactions [get]
+func (tc *TransactionController) GetTransactionsPage(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	userID, ok := currentUserID(c)
+	if !ok {
+		return
+	}
+
+	transactionFilters, err := parseTransactionFilters(c)
+	if err != nil {
+		httpapi.WriteError(c, err)
+		return
+	}
+
+	params, err := parsePaginationParams(c)
+	if err != nil {
+		httpapi.WriteError(c, err)
+		return
+	}
+
+	transactions, total, err := tc.transactionService.GetTransactionsPageByUser(ctx, userID, params, transactionFilters)
+	if err != nil {
+		httpapi.WriteError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, paginatedResponse[transactionResponse]{
+		Data:       newTransactionResponses(transactions),
+		Pagination: newPaginationResponse(params, total),
+	})
+}
+
 // DeleteTransaction removes a transaction
+// @Summary Delete a transaction
+// @Description Delete one of the authenticated user's transactions.
+// @Tags transactions
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Transaction ID" minimum(1)
+// @Success 200 {object} messageResponse
+// @Failure 400 {object} httpapi.ErrorResponse
+// @Failure 401 {object} httpapi.ErrorResponse
+// @Failure 404 {object} httpapi.ErrorResponse
+// @Failure 500 {object} httpapi.ErrorResponse
+// @Router /api/v1/transactions/{id} [delete]
 func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
 	ctx := c.Request.Context()
 
