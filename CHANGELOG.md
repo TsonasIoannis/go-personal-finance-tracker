@@ -1,5 +1,15 @@
 # Semantic Versioning Changelog
 
+# [1.13.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.12.0...v1.13.0) (2026-03-20)
+
+
+### Features
+
+* add open api swagger ([5a91199](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/5a911999273c4ad9598da027a96f93349a394d99))
+* add pagination for the list endpoints ([4ac200d](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/4ac200d4d2983b9dc569a02acc6ad5d4b62fcacd))
+* add transaction filtering ([35ee044](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/35ee04416a0e3fa6c2d0c532ef861c9e49dab0a1))
+* add versioned routes ([efaec7c](https://github.com/TsonasIoannis/go-personal-finance-tracker/commit/efaec7cbbb9c2c95f18305d61916d3beaccf022f))
+
 # [1.12.0](https://github.com/TsonasIoannis/go-personal-finance-tracker/compare/v1.11.0...v1.12.0) (2026-03-18)
 
 
